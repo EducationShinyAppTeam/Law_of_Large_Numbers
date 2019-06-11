@@ -8,7 +8,9 @@ library(shinyWidgets)
 # Define UI for application that draws a histogram
 shinyUI(
   dashboardPage(skin = "blue",
-                dashboardHeader(title = 'Law of Large Numbers',titleWidth=250),
+                dashboardHeader(title = 'Law of Large Numbers',titleWidth=250,
+                                tags$li(class = "dropdown", tags$a(href='https://shinyapps.science.psu.edu/',icon("home"))),
+                                tags$li(class = "dropdown", actionLink("info",icon("info",class="myClass")))),
                 dashboardSidebar(
                   sidebarMenu(
                     id="tabs",
@@ -46,6 +48,7 @@ shinyUI(
                               h3(tags$b("Acknowledgements:")),
                               h4("This app was originally developed and coded by Zibin Gao and Caihui Xiao. "),
                               h4("The app was modified and recoded by Yingjie(Chelsea) Wang in February 2018."), 
+                              h4("This app was modified and recoded by Zhiruo Wang in May 2019."), 
                               h4("Special thanks to Jingling Feng and team member Qichao Chen for help in the development of the app.")
                                  )),
                     
@@ -60,10 +63,10 @@ shinyUI(
                               ),
                             h4(
                               wellPanel(
-                                div(style="display: inline-block;vertical-align:top;",
-                                    tags$a(href='https://shinyapps.science.psu.edu/',tags$img(src='homebut.PNG', width = 19)),
-                                    circleButton("info",icon = icon("info"), status = "myClass",size = "xs")
-                                ),
+                                # div(style="display: inline-block;vertical-align:top;",
+                                #     tags$a(href='https://shinyapps.science.psu.edu/',tags$img(src='homebut.PNG', width = 19)),
+                                #     circleButton("info",icon = icon("info"), status = "myClass",size = "xs")
+                                # ),
                                 fluidRow(
                                   column(3,
                                          selectInput("popDist", "Population Type",
@@ -112,6 +115,7 @@ shinyUI(
                                                       "Hip-hop"),
                                                     selected ="Jazz"),
                                            
+                                                  
                                            column(4,offset = 0, 
                                                  
                                                   numericInput("s1", "Jazz", 1,

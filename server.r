@@ -17,7 +17,8 @@ shinyServer(function(session, input, output) {
     sendSweetAlert(
       session = session,
       title = "Instructions:",
-      text = "Pick a population type and see how sample averages converge which sample sums diverge from their expected value.",
+      text = "Population Graph is used to present the overall 
+              Pick a population type and see how sample averages converge which sample sums diverge from their expected value.",
       type = "info"
     )
   })
@@ -80,9 +81,9 @@ shinyServer(function(session, input, output) {
     # Population of left skewed
     output$plotleft1 <- renderPlot({
       # plot(seq(5,0,-.001), dgamma(seq(0,5,.001), input$leftskew, input$leftskew),
-      #      main="Population Graph", col="red", xlab="value", ylab="density", lwd = 1)
+      #      main="Population Graph", col="#3CA2C8", xlab="value", ylab="density", lwd = 1)
       curve(dgamma(-x, shape = input$leftskew, beta = 1),
-            main="Population Graph", col="red", xlab="value", ylab="density",lwd = 5,
+            main="Population Graph", col="#3CA2C8", xlab="value", ylab="density",lwd = 3,
             cex.lab=1.5, cex.axis=1.5, cex.main=1.5, cex.sub=1.5,
             xlim = c(input$leftskew-9*sqrt(input$leftskew), 0))
     })
@@ -107,9 +108,7 @@ shinyServer(function(session, input, output) {
       true.mean = -input$leftskew
       
       # define color in different pathes
-      colors = c("firebrick3", "dodgerblue4",
-                 rgb(1, 0, 0, 3/4), rgb(0, 1, 0, 3/4),
-                 rgb(0, 0, 1, 3/4))
+      colors = c("#3CA2C8", "#10559A","#CC6BB1", "#F9C6D7","#DB4C77")
       
       # plot average in different pathes
       for(i in 1:input$leftpath){
@@ -117,11 +116,11 @@ shinyServer(function(session, input, output) {
           plot(1:input$leftsize, matrix.means[, i], main = "Average Graph",
                xlab = "# of trials so far", ylab = "mean", type = "l",
                cex.lab=1.5, cex.axis=1.5, cex.main=1.5, cex.sub=1.5,
-               lwd = 5, col = colors[i], ylim = c(min(matrix.means, true.mean), 
+               lwd = 3, col = colors[i], ylim = c(min(matrix.means, true.mean), 
                                                   max(matrix.means, true.mean)))
         }
         if(i > 1){
-          lines(1:input$leftsize, (matrix.means[, i]), col = colors[i], lwd = 5,
+          lines(1:input$leftsize, (matrix.means[, i]), col = colors[i], lwd = 3,
                 ylim = c(min(matrix.means, true.mean),max(matrix.means, true.mean)))
         }
       }
@@ -150,9 +149,7 @@ shinyServer(function(session, input, output) {
       true.sum = 0
       
       # define color in different pathes
-      colors = c("firebrick3", "dodgerblue4",
-                 rgb(1, 0, 0, 3/4), rgb(0, 1, 0, 3/4),
-                 rgb(0, 0, 1, 3/4))
+      colors = c("#3CA2C8", "#10559A","#CC6BB1", "#F9C6D7","#DB4C77")
       
       # plot sum in different pathes
       for(i in 1:input$leftpath){
@@ -160,11 +157,11 @@ shinyServer(function(session, input, output) {
           plot(1:input$leftsize, matrix.sum[, i], main = "Sum Graph",
                xlab = "# of trials so far", ylab = "sum - E(sum)", type = "l",
                cex.lab=1.5, cex.axis=1.5, cex.main=1.5, cex.sub=1.5,
-               lwd = 5, col = colors[i], ylim = c(min(matrix.sum, true.sum), 
+               lwd = 3, col = colors[i], ylim = c(min(matrix.sum, true.sum), 
                                                   max(matrix.sum, true.sum)))
         }
         if(i > 1){
-          lines(1:input$leftsize, (matrix.sum[, i]), col = colors[i], lwd = 5,
+          lines(1:input$leftsize, (matrix.sum[, i]), col = colors[i], lwd = 3,
                 ylim = c(min(matrix.sum, true.sum),max(matrix.sum, true.sum)))
         }
       }
@@ -186,9 +183,9 @@ shinyServer(function(session, input, output) {
     # Population of right skewed
     output$plotright1<-renderPlot({
       # plot(seq(0,5,.001),dgamma(seq(0,5,.001),input$rightskew, input$rightskew),
-      #      main="Population Graph", col="red", xlab="value", ylab="density")
+      #      main="Population Graph", col="#3CA2C8", xlab="value", ylab="density")
       curve(dgamma(x, shape = input$rightskew, beta = 1),
-            main="Population Graph", col="red", xlab="value", ylab="density",lwd = 5,
+            main="Population Graph", col="#3CA2C8", xlab="value", ylab="density",lwd = 3,
             cex.lab=1.5, cex.axis=1.5, cex.main=1.5, cex.sub=1.5,
             xlim = c(0, input$rightskew+9*sqrt(input$rightskew)))
     })
@@ -213,9 +210,7 @@ shinyServer(function(session, input, output) {
       true.mean = input$rightskew
       
       # define color in different pathes
-      colors = c("firebrick3", "dodgerblue4",
-                 rgb(1, 0, 0, 3/4), rgb(0, 1, 0, 3/4),
-                 rgb(0, 0, 1, 3/4))
+      colors = c("#3CA2C8", "#10559A","#CC6BB1", "#F9C6D7","#DB4C77")
       
       # plot average in different pathes
       for(i in 1:input$rightpath){
@@ -223,11 +218,11 @@ shinyServer(function(session, input, output) {
           plot(1:input$rightsize, matrix.means[, i], main = "Average Graph",
                xlab = "# of trials so far", ylab = "mean", type = "l",
                cex.lab=1.5, cex.axis=1.5, cex.main=1.5, cex.sub=1.5,
-               lwd = 5, col = colors[i], ylim = c(min(matrix.means, true.mean), 
+               lwd = 3, col = colors[i], ylim = c(min(matrix.means, true.mean), 
                                                   max(matrix.means, true.mean)))
         } 
         if(i > 1){
-          lines(1:input$rightsize, (matrix.means[, i]), col = colors[i], lwd = 5, 
+          lines(1:input$rightsize, (matrix.means[, i]), col = colors[i], lwd = 3, 
                 ylim = c(min(matrix.means, true.mean), max(matrix.means, true.mean)))
         }
       }
@@ -256,9 +251,7 @@ shinyServer(function(session, input, output) {
       true.sum = 0
       
       # define color in different pathes
-      colors = c("firebrick3", "dodgerblue4",
-                 rgb(1, 0, 0, 3/4), rgb(0, 1, 0, 3/4),
-                 rgb(0, 0, 1, 3/4))
+      colors = c("#3CA2C8", "#10559A","#CC6BB1", "#F9C6D7","#DB4C77")
       
       # plot sum in different pathes
       for(i in 1:input$rightpath){
@@ -266,11 +259,11 @@ shinyServer(function(session, input, output) {
           plot(1:input$rightsize, matrix.sum[, i], main = "Sum Graph",
                xlab = "# of trials so far", ylab = "sum-E(sum)", type = "l",
                cex.lab=1.5, cex.axis=1.5, cex.main=1.5, cex.sub=1.5,
-               lwd = 5, col = colors[i], ylim = c(min(matrix.sum, true.sum), 
+               lwd = 3, col = colors[i], ylim = c(min(matrix.sum, true.sum), 
                                                   max(matrix.sum, true.sum)))
         }
         if(i > 1){
-          lines(1:input$rightsize, (matrix.sum[, i]), col = colors[i], lwd = 5, 
+          lines(1:input$rightsize, (matrix.sum[, i]), col = colors[i], lwd = 3, 
                 ylim = c(min(matrix.sum, true.sum), max(matrix.sum, true.sum)))
         }
       }
@@ -299,16 +292,16 @@ shinyServer(function(session, input, output) {
         plot(x, dens, type = "l", yaxs = "i", xaxs = "i", xlim=c(-0.03,1.03),
              cex.lab=1.5, cex.axis=1.5, cex.main=1.5, cex.sub=1.5,
              xlab = "value", ylab = "density", main = "Population Graph",
-             col = "red", lwd = 5)
-        segments(0,0,0,1, col = "red",lwd = 5)
-        segments(1,0,1,1, col = "red",lwd = 5)
+             col = "red", lwd = 3)
+        segments(0,0,0,1, col = "red",lwd = 3)
+        segments(1,0,1,1, col = "red",lwd = 3)
         lines(x, dens, col = "red")
         
       }else{
         plot(x, dens, type = "l", yaxs = "i", xaxs = "i", xlim=c(-0.01,1.01),
              cex.lab=1.5, cex.axis=1.5, cex.main=1.5, cex.sub=1.5,
              xlab = "value", ylab = "density", main = "Population Graph",
-             col = "red", lwd = 5)
+             col = "red", lwd = 3)
         lines(x, dens, col = "red")
       }
       # x <- seq(0, 1, length = input$symsize)
@@ -316,7 +309,7 @@ shinyServer(function(session, input, output) {
       # plot(x, dens, type = "l", yaxs = "i", xaxs = "i", xlim=c(-0.01,1.01),
       #      cex.lab=1.5, cex.axis=1.5, cex.main=1.5, cex.sub=1.5,
       #      xlab = "value", ylab = "density", main = "Population Graph",
-      #      col = "red", lwd = 5)
+      #      col = "red", lwd = 3)
       # lines(x, dens, col = "red")
     })
     
@@ -340,9 +333,7 @@ shinyServer(function(session, input, output) {
       true.mean = 1/2
       
       # define color in different pathes
-      colors = c("firebrick3", "dodgerblue4",
-                 rgb(1, 0, 0, 3/4), rgb(0, 1, 0, 3/4),
-                 rgb(0, 0, 1, 3/4))
+      colors = c("#3CA2C8", "#10559A","#CC6BB1", "#F9C6D7","#DB4C77")
       
       # plot average in different pathes
       for(i in 1:input$sympath){
@@ -350,11 +341,11 @@ shinyServer(function(session, input, output) {
           plot(1:input$symsize, matrix.means[, i], main = "Average Graph",
                xlab = "# of trials so far", ylab = "mean", type = "l",
                cex.lab=1.5, cex.axis=1.5, cex.main=1.5, cex.sub=1.5,
-               lwd = 5, col = colors[i], ylim = c(min(matrix.means, true.mean), 
+               lwd = 3, col = colors[i], ylim = c(min(matrix.means, true.mean), 
                                                   max(matrix.means, true.mean)))
         }
         if(i > 1){
-          lines(1:input$symsize, (matrix.means[, i]), col = colors[i], lwd = 5, 
+          lines(1:input$symsize, (matrix.means[, i]), col = colors[i], lwd = 3, 
                 ylim = c(min(matrix.means, true.mean), max(matrix.means, true.mean)))
         }
       }
@@ -383,9 +374,7 @@ shinyServer(function(session, input, output) {
       true.sum = 0
       
       # define color in different pathes
-      colors = c("firebrick3", "dodgerblue4",
-                 rgb(1, 0, 0, 3/4), rgb(0, 1, 0, 3/4),
-                 rgb(0, 0, 1, 3/4))
+      colors = c("#3CA2C8", "#10559A","#CC6BB1", "#F9C6D7","#DB4C77")
       
       # plot sum in different pathes
       for(i in 1:input$sympath){
@@ -393,11 +382,11 @@ shinyServer(function(session, input, output) {
           plot(1:input$symsize, matrix.sum[, i], main = "Sum Graph",
                xlab = "# of trials so far", ylab = "sum-E(sum)", type = "l",
                cex.lab=1.5, cex.axis=1.5, cex.main=1.5, cex.sub=1.5,
-               lwd = 5, col = colors[i], ylim = c(min(matrix.sum, true.sum), 
+               lwd = 3, col = colors[i], ylim = c(min(matrix.sum, true.sum), 
                                                   max(matrix.sum, true.sum)))
         }
         if(i > 1){
-          lines(1:input$symsize, (matrix.sum[, i]), col = colors[i], lwd = 5, 
+          lines(1:input$symsize, (matrix.sum[, i]), col = colors[i], lwd = 3, 
                 ylim = c(min(matrix.sum, true.sum), max(matrix.sum, true.sum)))
         }
       }
@@ -430,8 +419,8 @@ shinyServer(function(session, input, output) {
       plot(y, Z, type="l", yaxs="i", xaxs="i",
            xlab="value", ylab="density", main="Population Graph", 
            cex.lab=1.5, cex.axis=1.5, cex.main=1.5, cex.sub=1.5,
-           col="red", lwd=5)
-      lines(y, Z, type="l", col="red", xlab="",ylab="")
+           col="#3CA2C8", lwd=3)
+      lines(y, Z, type="l", col="#3CA2C8", xlab="",ylab="")
     })
     
     # Matrix of rgamma value
@@ -454,9 +443,7 @@ shinyServer(function(session, input, output) {
       true.mean = mean(data4())
       
       # define color in different pathes
-      colors = c("firebrick3", "dodgerblue4",
-                 rgb(1, 0, 0, 3/4), rgb(0, 1, 0, 3/4),
-                 rgb(0, 0, 1, 3/4))
+      colors = c("#3CA2C8", "#10559A","#CC6BB1", "#F9C6D7","#DB4C77")
       
       # plot average in different pathes
       for(i in 1:input$bipath){
@@ -464,11 +451,11 @@ shinyServer(function(session, input, output) {
           plot(1:input$bisize, matrix.means[, i], main = "Average Graph",
                xlab = "# of trials so far", ylab = "mean", type = "l",
                cex.lab=1.5, cex.axis=1.5, cex.main=1.5, cex.sub=1.5,
-               lwd = 5, col = colors[i], ylim = c(min(matrix.means, true.mean), 
+               lwd = 3, col = colors[i], ylim = c(min(matrix.means, true.mean), 
                                                   max(matrix.means, true.mean)))
         }
         if(i > 1){
-          lines(1:input$bisize, (matrix.means[, i]), col = colors[i], lwd = 5, 
+          lines(1:input$bisize, (matrix.means[, i]), col = colors[i], lwd = 3, 
                 ylim = c(min(matrix.means, true.mean), max(matrix.means, true.mean)))
         }
       }
@@ -497,9 +484,7 @@ shinyServer(function(session, input, output) {
       true.sum = 0
       
       # define color in different pathes
-      colors = c("firebrick3", "dodgerblue4",
-                 rgb(1, 0, 0, 3/4), rgb(0, 1, 0, 3/4),
-                 rgb(0, 0, 1, 3/4))
+      colors = c("#3CA2C8", "#10559A","#CC6BB1", "#F9C6D7","#DB4C77")
       
       # plot sum in different pathes
       for(i in 1:input$bipath){
@@ -507,11 +492,11 @@ shinyServer(function(session, input, output) {
           plot(1:input$bisize, matrix.sum[, i], main = "Sum Graph",
                xlab = "# of trials so far", ylab = "sum-E(sum)", type = "l",
                cex.lab=1.5, cex.axis=1.5, cex.main=1.5, cex.sub=1.5,
-               lwd = 5, col = colors[i], ylim = c(min(matrix.sum, true.sum), 
+               lwd = 3, col = colors[i], ylim = c(min(matrix.sum, true.sum), 
                                                   max(matrix.sum, true.sum)))
         }
         if(i > 1){
-          lines(1:input$bisize, (matrix.sum[, i]), col = colors[i], lwd = 5, 
+          lines(1:input$bisize, (matrix.sum[, i]), col = colors[i], lwd = 3, 
                 ylim = c(min(matrix.sum, true.sum), max(matrix.sum, true.sum)))
         }
       }
@@ -561,9 +546,7 @@ shinyServer(function(session, input, output) {
       true.mean = input$poissonmean
       
       # define color in different pathes
-      colors = c("firebrick3", "dodgerblue4",
-                 rgb(1, 0, 0, 3/4), rgb(0, 1, 0, 3/4),
-                 rgb(0, 0, 1, 3/4))
+      colors = c("#3CA2C8", "#10559A","#CC6BB1", "#F9C6D7","#DB4C77")
       
       # plot average in different pathes
       for(i in 1:input$poissonpath){
@@ -571,11 +554,11 @@ shinyServer(function(session, input, output) {
           plot(1:input$poissonsize, matrix.means[, i], main = "Average Graph",
                xlab = "# of trials so far", ylab = "mean", type = "l",
                cex.lab=1.5, cex.axis=1.5, cex.main=1.5, cex.sub=1.5,
-               lwd = 5, col = colors[i], ylim = c(min(matrix.means, true.mean), 
+               lwd = 3, col = colors[i], ylim = c(min(matrix.means, true.mean), 
                                                   max(matrix.means, true.mean)))
         }
         if(i > 1){
-          lines(1:input$poissonsize, (matrix.means[, i]), col = colors[i], lwd = 5, 
+          lines(1:input$poissonsize, (matrix.means[, i]), col = colors[i], lwd = 3, 
                 ylim = c(min(matrix.means, true.mean), max(matrix.means, true.mean)))
         }
       }
@@ -604,9 +587,7 @@ shinyServer(function(session, input, output) {
       true.sum = 0
       
       # define color in different pathes
-      colors = c("firebrick3", "dodgerblue4",
-                 rgb(1, 0, 0, 3/4), rgb(0, 1, 0, 3/4),
-                 rgb(0, 0, 1, 3/4))
+      colors = c("#3CA2C8", "#10559A","#CC6BB1", "#F9C6D7","#DB4C77")
       
       # plot sum in different pathes
       for(i in 1:input$poissonpath){
@@ -614,11 +595,11 @@ shinyServer(function(session, input, output) {
           plot(1:input$poissonsize, matrix.sum[, i], main = "Sum Graph",
                xlab = "# of trials so far", ylab = "Sum-E(Sum)", type = "l",
                cex.lab=1.5, cex.axis=1.5, cex.main=1.5, cex.sub=1.5,
-               lwd = 5, col = colors[i], ylim = c(min(matrix.sum, true.sum), 
+               lwd = 3, col = colors[i], ylim = c(min(matrix.sum, true.sum), 
                                                   max(matrix.sum, true.sum)))
         }
         if(i > 1){
-          lines(1:input$poissonsize, (matrix.sum[, i]), col = colors[i], lwd = 5, 
+          lines(1:input$poissonsize, (matrix.sum[, i]), col = colors[i], lwd = 3, 
                 ylim = c(min(matrix.sum, true.sum), max(matrix.sum, true.sum)))
         }
       }
@@ -685,16 +666,14 @@ shinyServer(function(session, input, output) {
       true.mean=3.5
       
       # define color in different pathes
-      colors = c("firebrick3", "dodgerblue4",
-                 rgb(1, 0, 0, 3/4), rgb(0, 1, 0, 3/4),
-                 rgb(0, 0, 1, 3/4))
+      colors = c("#3CA2C8", "#10559A","#CC6BB1", "#F9C6D7","#DB4C77")
       
       # plot average in different pathes
       for(i in 1:input$aspath){
         if(i == 1){
           plot(1:input$assize, matrix.means[,i], type="l", main="Average Graph",
                cex.lab=1.5, cex.axis=1.5, cex.main=1.5, cex.sub=1.5,
-               col = "red", lwd = 5,
+               col = "red", lwd = 3,
                xlab="# of trials so far", ylab = "mean",
                ylim = c(min(matrix.means, true.mean), 
                         max(matrix.means, true.mean)))
@@ -728,9 +707,7 @@ shinyServer(function(session, input, output) {
       true.sum = 0
       
       # define color in different pathes
-      colors = c("firebrick3", "dodgerblue4",
-                 rgb(1, 0, 0, 3/4), rgb(0, 1, 0, 3/4),
-                 rgb(0, 0, 1, 3/4))
+      colors = c("#3CA2C8", "#10559A","#CC6BB1", "#F9C6D7","#DB4C77")
       
       for(i in 1:input$aspath){
         if(i==1){
@@ -818,7 +795,7 @@ shinyServer(function(session, input, output) {
       # x <- seq(0, n, by = 1)
       # plot (x, dbinom(x, n, pjazz, log = FALSE), type = "l", xlab = "values",ylab = "density",
       #       main = "Population Graph",cex.lab=1.5, cex.axis=1.5, cex.main=1.5, cex.sub=1.5,
-      #       col="red", lwd=5)
+      #       col="#3CA2C8", lwd=5)
     })
     
     # Rock population plot
@@ -833,7 +810,7 @@ shinyServer(function(session, input, output) {
       # x <- seq(0, n, by = 1)
       # plot (x, dbinom(x, n, prock, log = FALSE), type = "l", xlab = "values",ylab = "density",
       #       main = "Population Graph",cex.lab=1.5, cex.axis=1.5, cex.main=1.5, cex.sub=1.5,
-      #       col="red", lwd=5)
+      #       col="#3CA2C8", lwd=5)
     })
     
     # Country population plot
@@ -848,7 +825,7 @@ shinyServer(function(session, input, output) {
       # x <- seq(0, n, by = 1)
       # plot (x, dbinom(x, n, pcountry, log = FALSE), type = "l", xlab = "values",ylab = "density",
       #       main = "Population Graph",cex.lab=1.5, cex.axis=1.5, cex.main=1.5, cex.sub=1.5,
-      #       col="red", lwd=5)
+      #       col="#3CA2C8", lwd=5)
     })
     
     #Hip-pop population plot
@@ -863,7 +840,7 @@ shinyServer(function(session, input, output) {
       # x <- seq(0, n, by = 1)
       # plot (x, dbinom(x, n, phiphop, log = FALSE), type = "l", xlab = "values",ylab = "density",
       #       main = "Population Graph",cex.lab=1.5, cex.axis=1.5, cex.main=1.5, cex.sub=1.5,
-      #       col="red", lwd=5)
+      #       col="#3CA2C8", lwd=5)
     })
     
     ############################################
@@ -894,9 +871,7 @@ shinyServer(function(session, input, output) {
       true.mean = input$s1/sum(songs())
       
       # define color in different pathes
-      colors = c("firebrick3", "dodgerblue4",
-                 rgb(1, 0, 0, 3/4), rgb(0, 1, 0, 3/4),
-                 rgb(0, 0, 1, 3/4))
+      colors = c("#3CA2C8", "#10559A","#CC6BB1", "#F9C6D7","#DB4C77")
       
       # plot average in different pathes
       for(i in 1:input$ipodpath){
@@ -904,11 +879,11 @@ shinyServer(function(session, input, output) {
           plot(1:input$ipodsize, matrix.means[, i], main = "Average Graph",
                xlab = "# of trials so far", ylab = "proportion", type = "l",
                cex.lab=1.5, cex.axis=1.5, cex.main=1.5, cex.sub=1.5,
-               lwd = 5, col = colors[i], ylim = c(min(matrix.means, true.mean), 
+               lwd = 3, col = colors[i], ylim = c(min(matrix.means, true.mean), 
                                                   max(matrix.means, true.mean)))
         }
         if(i > 1){
-          lines(1:input$ipodsize, (matrix.means[, i]), col = colors[i], lwd = 5)
+          lines(1:input$ipodsize, (matrix.means[, i]), col = colors[i], lwd = 3)
         }
       }
       
@@ -936,9 +911,7 @@ shinyServer(function(session, input, output) {
       true.mean = input$s2/sum(songs())
       
       # define color in different pathes
-      colors = c("firebrick3", "dodgerblue4",
-                 rgb(1, 0, 0, 3/4), rgb(0, 1, 0, 3/4),
-                 rgb(0, 0, 1, 3/4))
+      colors = c("#3CA2C8", "#10559A","#CC6BB1", "#F9C6D7","#DB4C77")
       
       # plot average in different pathes
       for(i in 1:input$ipodpath){
@@ -946,11 +919,11 @@ shinyServer(function(session, input, output) {
           plot(1:input$ipodsize, matrix.means[, i], main = "Average Graph",
                xlab = "# of trials so far", ylab = "proportion", type = "l",
                cex.lab=1.5, cex.axis=1.5, cex.main=1.5, cex.sub=1.5,
-               lwd = 5, col = colors[i], ylim = c(min(matrix.means, true.mean), 
+               lwd = 3, col = colors[i], ylim = c(min(matrix.means, true.mean), 
                                                   max(matrix.means, true.mean)))
         }
         if(i > 1){
-          lines(1:input$ipodsize, (matrix.means[, i]), col = colors[i], lwd = 5)
+          lines(1:input$ipodsize, (matrix.means[, i]), col = colors[i], lwd = 3)
         }
       }
       
@@ -978,9 +951,7 @@ shinyServer(function(session, input, output) {
       true.mean = input$s3/sum(songs())
       
       # define color in different pathes
-      colors = c("firebrick3", "dodgerblue4",
-                 rgb(1, 0, 0, 3/4), rgb(0, 1, 0, 3/4),
-                 rgb(0, 0, 1, 3/4))
+      colors = c("#3CA2C8", "#10559A","#CC6BB1", "#F9C6D7","#DB4C77")
       
       # plot average in different pathes
       for(i in 1:input$ipodpath){
@@ -988,11 +959,11 @@ shinyServer(function(session, input, output) {
           plot(1:input$ipodsize, matrix.means[, i], main = "Average Graph",
                xlab = "# of trials so far", ylab = "proportion", type = "l",
                cex.lab=1.5, cex.axis=1.5, cex.main=1.5, cex.sub=1.5,
-               lwd = 5, col = colors[i], ylim = c(min(matrix.means, true.mean), 
+               lwd = 3, col = colors[i], ylim = c(min(matrix.means, true.mean), 
                                                   max(matrix.means, true.mean)))
         }
         if(i > 1){
-          lines(1:input$ipodsize, (matrix.means[, i]), col = colors[i], lwd = 5)
+          lines(1:input$ipodsize, (matrix.means[, i]), col = colors[i], lwd = 3)
         }
       }
       
@@ -1020,9 +991,7 @@ shinyServer(function(session, input, output) {
       true.mean = input$s4/sum(songs())
       
       # define color in different pathes
-      colors = c("firebrick3", "dodgerblue4",
-                 rgb(1, 0, 0, 3/4), rgb(0, 1, 0, 3/4),
-                 rgb(0, 0, 1, 3/4))
+      colors = c("#3CA2C8", "#10559A","#CC6BB1", "#F9C6D7","#DB4C77")
       
       # plot average in different pathes
       for(i in 1:input$ipodpath){
@@ -1030,11 +999,11 @@ shinyServer(function(session, input, output) {
           plot(1:input$ipodsize, matrix.means[, i], main = "Average Graph",
                xlab = "# of trials so far", ylab = "proportion", type = "l",
                cex.lab=1.5, cex.axis=1.5, cex.main=1.5, cex.sub=1.5,
-               lwd = 5, col = colors[i], ylim = c(min(matrix.means, true.mean), 
+               lwd = 3, col = colors[i], ylim = c(min(matrix.means, true.mean), 
                                                   max(matrix.means, true.mean)))
         }
         if(i > 1){
-          lines(1:input$ipodsize, (matrix.means[, i]), col = colors[i], lwd = 5)
+          lines(1:input$ipodsize, (matrix.means[, i]), col = colors[i], lwd = 3)
         }
       }
       
@@ -1066,9 +1035,7 @@ shinyServer(function(session, input, output) {
         true.sum = 0
         
         # define color in different pathes
-        colors = c("firebrick3", "dodgerblue4",
-                   rgb(1, 0, 0, 3/4), rgb(0, 1, 0, 3/4),
-                   rgb(0, 0, 1, 3/4))
+        colors = c("#3CA2C8", "#10559A","#CC6BB1", "#F9C6D7","#DB4C77")
         
         # plot sum in different pathes
         for(i in 1:input$ipodpath){
@@ -1076,11 +1043,11 @@ shinyServer(function(session, input, output) {
             plot(1:input$ipodsize, matrix.sum[, i], main = "Sum Graph",
                  xlab = "# of trials so far", ylab = "count - E(count)", type = "l",
                  cex.lab=1.5, cex.axis=1.5, cex.main=1.5, cex.sub=1.5,
-                 lwd = 5, col = colors[i], ylim = c(min(matrix.sum, true.sum), 
+                 lwd = 3, col = colors[i], ylim = c(min(matrix.sum, true.sum), 
                                                     max(matrix.sum, true.sum)))
           }
           if(i > 1){
-            lines(1:input$ipodsize, (matrix.sum[, i]), col = colors[i], lwd = 5,
+            lines(1:input$ipodsize, (matrix.sum[, i]), col = colors[i], lwd = 3,
                   ylim = c(min(matrix.sum, true.sum),max(matrix.sum, true.sum)))
           }
         }
@@ -1110,9 +1077,7 @@ shinyServer(function(session, input, output) {
       true.sum = 0
       
       # define color in different pathes
-      colors = c("firebrick3", "dodgerblue4",
-                 rgb(1, 0, 0, 3/4), rgb(0, 1, 0, 3/4),
-                 rgb(0, 0, 1, 3/4))
+      colors = c("#3CA2C8", "#10559A","#CC6BB1", "#F9C6D7","#DB4C77")
       
       # plot sum in different pathes
       for(i in 1:input$ipodpath){
@@ -1120,11 +1085,11 @@ shinyServer(function(session, input, output) {
           plot(1:input$ipodsize, matrix.sum[, i], main = "Sum Graph",
                xlab = "# of trials so far", ylab = "count - E(count)", type = "l",
                cex.lab=1.5, cex.axis=1.5, cex.main=1.5, cex.sub=1.5,
-               lwd = 5, col = colors[i], ylim = c(min(matrix.sum, true.sum), 
+               lwd = 3, col = colors[i], ylim = c(min(matrix.sum, true.sum), 
                                                   max(matrix.sum, true.sum)))
         }
         if(i > 1){
-          lines(1:input$ipodsize, (matrix.sum[, i]), col = colors[i], lwd = 5,
+          lines(1:input$ipodsize, (matrix.sum[, i]), col = colors[i], lwd = 3,
                 ylim = c(min(matrix.sum, true.sum),max(matrix.sum, true.sum)))
         }
       }
@@ -1154,9 +1119,7 @@ shinyServer(function(session, input, output) {
       true.sum = 0
       
       # define color in different pathes
-      colors = c("firebrick3", "dodgerblue4",
-                 rgb(1, 0, 0, 3/4), rgb(0, 1, 0, 3/4),
-                 rgb(0, 0, 1, 3/4))
+      colors = c("#3CA2C8", "#10559A","#CC6BB1", "#F9C6D7","#DB4C77")
       
       # plot sum in different pathes
       for(i in 1:input$ipodpath){
@@ -1164,11 +1127,11 @@ shinyServer(function(session, input, output) {
           plot(1:input$ipodsize, matrix.sum[, i], main = "Sum Graph",
                xlab = "# of trials so far", ylab = "count - E(count)", type = "l",
                cex.lab=1.5, cex.axis=1.5, cex.main=1.5, cex.sub=1.5,
-               lwd = 5, col = colors[i], ylim = c(min(matrix.sum, true.sum), 
+               lwd = 3, col = colors[i], ylim = c(min(matrix.sum, true.sum), 
                                                   max(matrix.sum, true.sum)))
         }
         if(i > 1){
-          lines(1:input$ipodsize, (matrix.sum[, i]), col = colors[i], lwd = 5,
+          lines(1:input$ipodsize, (matrix.sum[, i]), col = colors[i], lwd = 3,
                 ylim = c(min(matrix.sum, true.sum),max(matrix.sum, true.sum)))
         }
       }
@@ -1198,9 +1161,7 @@ shinyServer(function(session, input, output) {
       true.sum = 0
       
       # define color in different pathes
-      colors = c("firebrick3", "dodgerblue4",
-                 rgb(1, 0, 0, 3/4), rgb(0, 1, 0, 3/4),
-                 rgb(0, 0, 1, 3/4))
+      colors = c("#3CA2C8", "#10559A","#CC6BB1", "#F9C6D7","#DB4C77")
       
       # plot sum in different pathes
       for(i in 1:input$ipodpath){
@@ -1208,11 +1169,11 @@ shinyServer(function(session, input, output) {
           plot(1:input$ipodsize, matrix.sum[, i], main = "Sum Graph",
                xlab = "# of trials so far", ylab = "count - E(count)", type = "l",
                cex.lab=1.5, cex.axis=1.5, cex.main=1.5, cex.sub=1.5,
-               lwd = 5, col = colors[i], ylim = c(min(matrix.sum, true.sum), 
+               lwd = 3, col = colors[i], ylim = c(min(matrix.sum, true.sum), 
                                                   max(matrix.sum, true.sum)))
         }
         if(i > 1){
-          lines(1:input$ipodsize, (matrix.sum[, i]), col = colors[i], lwd = 5,
+          lines(1:input$ipodsize, (matrix.sum[, i]), col = colors[i], lwd = 3,
                 ylim = c(min(matrix.sum, true.sum),max(matrix.sum, true.sum)))
         }
       }
