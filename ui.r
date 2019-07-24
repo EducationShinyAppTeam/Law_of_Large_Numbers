@@ -20,7 +20,8 @@ shinyUI(
                 ),
                 dashboardBody(
                   tags$head( 
-                    tags$link(rel = "stylesheet", type = "text/css", href = "Feature.css")
+                    tags$link(rel = "stylesheet", type = "text/css", href = "Feature.css"),
+                    tags$style(HTML('#go{color:white;background-color: #337ab7}'))
                   ),
                   tabItems(
                     tabItem(tabName = "Overview",
@@ -43,7 +44,8 @@ shinyUI(
                                  (i.e. # of repetitions of the whole simulation).")),
                               h4(tags$li("Observe whether the plots for the averages and sums converge or diverge from their expected values.")),
                              
-                              div(style = "text-align: center",bsButton("go", "Explore", icon("bolt"), style = "primary")),
+                              div(style = "text-align: center",
+                                  bsButton("go", "Explore", icon("bolt"),class="circle grow")),
                               br(),
                               h3(tags$b("Acknowledgements:")),
                               h4("This app was originally developed and coded by Zibin Gao and Caihui Xiao. "),

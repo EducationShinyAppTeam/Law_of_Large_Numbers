@@ -17,9 +17,10 @@ shinyServer(function(session, input, output) {
     sendSweetAlert(
       session = session,
       title = "Instructions:",
+      type = NULL,
+      closeOnClickOutside = TRUE,
       text = "Population Graph is used to present the overall 
-              Pick a population type and see how sample averages converge which sample sums diverge from their expected value.",
-      type = "info"
+              Pick a population type and see how sample averages converge which sample sums diverge from their expected value."
     )
   })
   
@@ -205,6 +206,7 @@ shinyServer(function(session, input, output) {
           matrix.means[i, j] = mean(matrix[1:i, j])
         }
       }
+      
       
       # define the true mean alpha*beta = 1
       true.mean = input$rightskew
