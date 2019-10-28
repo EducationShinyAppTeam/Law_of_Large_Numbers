@@ -11,8 +11,35 @@ library(formattable)
 library(discrimARTs)
 library(truncnorm)
 library(shinyWidgets)
+library(rlocker)
 
 shinyServer(function(session, input, output) {
+  #############rlocker initialized#########
+  #Initialized learning  locker connection
+  connection <- rlocker::connect(session, list(
+    base_url = "https://learning-locker.stat.vmhost.psu.edu/",
+    auth = "Basic ZDQ2OTNhZWZhN2Q0ODRhYTU4OTFmOTlhNWE1YzBkMjQxMjFmMGZiZjo4N2IwYzc3Mjc1MzU3MWZkMzc1ZDliY2YzOTNjMGZiNzcxOThiYWU2",
+    agent = rlocker::createAgent()
+  ))
+  
+  # Setup demo app and user.
+  currentUser <- 
+    connection$agent
+  
+  if(connection$status != 200){
+    warning(paste(connection$status, "\nTry checking your auth token.")) 
+  }
+  
+  getCurrentAddress <- function(session){
+    return(paste0(
+      session$clientData$url_protocol, "//",
+      session$clientData$url_hostname,
+      session$clientData$url_pathname, ":",
+      session$clientData$url_port,
+      session$clientData$url_search
+    ))
+  }
+  
   observeEvent(input$info,{
     sendSweetAlert(
       session = session,

@@ -4,6 +4,7 @@ library(plotrix)
 library(shinythemes)
 library(shinyBS)
 library(shinyWidgets)
+library(rlocker)
 
 # Define UI for application that draws a histogram
 shinyUI(
