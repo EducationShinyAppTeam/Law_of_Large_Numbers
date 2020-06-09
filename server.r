@@ -1,50 +1,47 @@
 library(shiny)
 library(shinydashboard)
-library(plotrix)
 library(ggplot2)
-library(scales)
 library(stats)
 library(Rlab)
-library(dplyr)
-library(formattable)
-library(discrimARTs)
 library(shinyWidgets)
-library(rlocker)
+library(dplyr)
+#library(rlocker)
 
 shinyServer(function(session, input, output) {
   #############rlocker initialized#########
   #Initialized learning  locker connection
-  connection <- rlocker::connect(
-    session,
-    list(
-      base_url = "https://learning-locker.stat.vmhost.psu.edu/",
-      auth = "Basic ZDQ2OTNhZWZhN2Q0ODRhYTU4OTFmOTlhNWE1YzBkMjQxMjFmMGZiZjo4N2IwYzc3Mjc1MzU3MWZkMzc1ZDliY2YzOTNjMGZiNzcxOThiYWU2",
-      agent = rlocker::createAgent()
-    )
-  )
+  #connection <- rlocker::connect(
+  #  session,
+  #  list(
+  #    base_url = "https://learning-locker.stat.vmhost.psu.edu/",
+  #    auth = "Basic ZDQ2OTNhZWZhN2Q0ODRhYTU4OTFmOTlhNWE1YzBkMjQxMjFmMGZiZjo4N2IwYzc3Mjc1MzU3MWZkMzc1ZDliY2YzOTNjMGZiNzcxOThiYWU2",
+  #    agent = rlocker::createAgent()
+  #  )
+  #)
   
   # Setup demo app and user.
-  currentUser <-
-    connection$agent
+  #currentUser <-
+  #  connection$agent
   
-  if (connection$status != 200) {
-    warning(paste(connection$status, "\nTry checking your auth token."))
-  }
+  #if (connection$status != 200) {
+  #  warning(paste(connection$status, "\nTry checking your auth token."))
+  #}
   
-  getCurrentAddress <- function(session) {
-    return(
-      paste0(
-        session$clientData$url_protocol,
-        "//",
-        session$clientData$url_hostname,
-        session$clientData$url_pathname,
-        ":",
-        session$clientData$url_port,
-        session$clientData$url_search
-      )
-    )
-  }
+  #getCurrentAddress <- function(session) {
+  #  return(
+  #    paste0(
+  #      session$clientData$url_protocol,
+  #      "//",
+  #      session$clientData$url_hostname,
+  #      session$clientData$url_pathname,
+  #      ":",
+  #      session$clientData$url_port,
+  #      session$clientData$url_search
+  #    )
+  #  )
+  #}
   
+  # Info Button in upper corner
   observeEvent(input$info, {
     sendSweetAlert(
       session = session,
@@ -62,2167 +59,667 @@ shinyServer(function(session, input, output) {
     updateTabItems(session, "tabs", "largeNumber")
   })
   
-  #list all input value
-  observeEvent({
-    # choose population type
-    input$popDist
+  # define color in different paths
+  colors <-  c("#0072B2","#D55E00","#009E73","#ce77a8","#E69F00")
+  
+  # Function for matrix means
+  # Input: path (numeric), size (numeric), and matrix of data (numeric matrix)
+  # Output: Matrix of means
+  matrixMeans<-function(path, size, matrix){
+    means <- matrix(0, nrow = size, ncol = path)
+    for (j in 1:path) {
+      for (i in 1:size) {
+        means[i, j] = mean(matrix[1:i, j])
+      }
+    }
+    return(means)
+  }
+  
+  # Function for making the sum plots 
+  #Input: number of paths (numeric), sample size (numeric), matrix of sum values (numeric matrix), actual sum value (numeric)
+  #Returns: the plot object
+  makeSumPlot<-function(path, size, matrixSum, trueSum, label){
+      # Set up data frame to use with ggplot
+      allNames<-c("A","B","C","D","E") 
+      data<-as.data.frame(matrixSum)
+      colnames(data)<-allNames[1:path]
+      data$x<-1:size
+      
+      # Create plot
+      plot<-ggplot2::ggplot(aes_string(x='x'), data= data) +
+        geom_hline(aes(yintercept=trueSum, linetype="True sum"), show.legend=T, size=1) +
+        scale_linetype_manual(name = "", values = c("dotted"), 
+                              guide = guide_legend(override.aes = list(color = c("black"))))+
+        ylim(c(
+          min(matrixSum, trueSum)-.01,
+          max(matrixSum, trueSum)+.01
+        ))+
+        xlab("Number of trials so far") + 
+        ylab('Sum-E(sum)') +
+        ggtitle("Sum")+
+        theme(axis.text = element_text(size=18),
+              plot.title = element_text(size=18, face="bold"),
+              axis.title = element_text(size=18),
+              panel.background = element_rect(fill = "white", color="black"),
+              legend.position=c(.89,1.07),
+              legend.text = element_text(size=14)
+        )
+      
+      # Add paths
+      for(i in 1:path){
+        plot<-plot + geom_path(aes_string(x='x', y=allNames[i]), data=data, color=colors[i], size=1.5)
+      }
+      plot
+  }
+
+  # Function for making the mean plots 
+  #Input: number of paths (numeric), sample size (numeric), matrix of sum values (numeric matrix), actual sum value (numeric), optional y label (default is Mean)
+  #Returns: the plot object
+  makeMeansPlot<-function(path, size, matrixMeans, trueMean, label="Mean"){
+    # Set up dataframe to use with ggplot
+    allNames<-c("A","B","C","D","E") 
+    data<-as.data.frame(matrixMeans)
+    colnames(data)<-allNames[1:path]
+    data$x<-1:size
     
-    # Left skewed
-    input$leftskew
-    input$leftpath
-    input$leftsize
+    # Create Plot
+    plot<-ggplot2::ggplot(aes_string(x='x'), data= data) +
+      geom_hline(aes(yintercept=trueMean, linetype="True mean"), show.legend=T, size=1) +
+      scale_linetype_manual(name = "", values = c("dotted"), 
+                            guide = guide_legend(override.aes = list(color = c("black"))))+
+      ylim(c(
+        min(matrixMeans, trueMean)-.01,
+        max(matrixMeans, trueMean)+.01
+      ))+
+      xlab("Number of trials so far") + 
+      ylab(label) +
+      ggtitle("Arithmetic Mean")+
+      theme(axis.text = element_text(size=18),
+            plot.title = element_text(size=18, face="bold"),
+            axis.title = element_text(size=18),
+            panel.background = element_rect(fill = "white", color="black"),
+            legend.position=c(.89,1.07),
+            legend.text = element_text(size=14)
+      )
+    # Add paths
+    for(i in 1:path){
+      plot<-plot + geom_path(aes_string(x='x', y=allNames[i]), data=data, color=colors[i], size=1.5)
+    }
+    plot
+  }
+  
+  # Function to create density plots for each group
+  # Inputs: Dataframe consisting of columns x and y to define axes, limits for x axis in form c(lower, upper), optional path for symmetric case
+  # Output: ggplot of density
+  makeDensityPlot <- function(data, xlims, path=0){
+    plot<-ggplot2::ggplot(aes(x=x, y=y), data= data) +
+      geom_path(color="#0072B2", size=1.5) +
+      xlim(xlims) +
+      xlab("Value") + 
+      ylab("Density") +
+      ggtitle("Population Graph")+
+      theme(axis.text = element_text(size=18),
+            plot.title = element_text(size=18, face="bold"),
+            axis.title = element_text(size=18),
+            panel.background = element_rect(fill = "white", color="black")
+      )
+    # For case in symmetric where path is 1 causing "box" shape
+    if(path ==1){
+      plot<-plot+
+        geom_segment(aes(x=0, y=0, xend=0, yend=1), color="#0072B2", size=1.5)+
+        geom_segment(aes(x=1, y=0, xend=1, yend=1), color="#0072B2", size=1.5)
+    }
+    plot
+  }
+  
+  # Function to create bar plots for each group
+  # Inputs: x axis label (string), dataframe consisting of either column x or columns x and y to define axes
+  # Output: ggplot of resulting bar plot
+  makeBarPlot<-function(xlab, data){
+      plot<-ggplot(aes(x=x, y=y), data= data) + 
+        geom_bar(stat = "identity", fill="#0072B2") +
+        ylim(c(0, max(data$y)+.1*max(data$y)))+
+        xlab(xlab) + 
+        ylab("Probability") +
+        ggtitle("Population Graph")+
+        theme(axis.text = element_text(size=18),
+              plot.title = element_text(size=18, face="bold"),
+              axis.title = element_text(size=18),
+              panel.background = element_rect(fill = "white", color="black"))
     
-    # Right skewed
-    input$rightskew
-    input$rightpath
-    input$rightsize
+    plot
+  }
+  
+  ###################################################################
+  ## Left skewed
+  ####################################################################
+  
+  # Population of left skewed
+  output$plotleft1 <- renderCachedPlot({
+    # Define parameters for density plot
+    x <- seq(input$leftskew - 9 * sqrt(input$leftskew),0, length = input$symsize)  
+    y <- dgamma(-x, shape = input$leftskew, beta = 1)
+    data<-data.frame(x=x, y=y)
     
-    # Symmetric
-    input$inverse
-    input$sympath
-    input$symsize
-    
-    # Bimodal
-    input$prop
-    input$bipath
-    input$bisize
-    
-    # Accident Rate
-    input$poissonMean
-    input$poissonpath
-    input$poissonsize
-    
-    
-    # Astrugluas
-    input$aspath
-    input$assize
-    
-    #ipodshuffle
-    input$ptype
-    input$s1
-    input$s2
-    input$s3
-    input$s4
-    input$ipodpath
-    input$ipodsize
+    # Make Density Plot
+    makeDensityPlot(data=data, xlims = c(input$leftskew - 9 * sqrt(input$leftskew), 0))
   },
-  {
-    ###################################################################
-    ## Left skewed
-    ####################################################################
-    
-    # Population of left skewed
-    output$plotleft1 <- renderCachedPlot({
-      # plot(seq(5,0,-.001), dgamma(seq(0,5,.001), input$leftskew, input$leftskew),
-      #      main="Population Graph", col="#3CA2C8", xlab="value", ylab="density", lwd = 1)
-      curve(
-        dgamma(-x, shape = input$leftskew, beta = 1),
-        main = "Population Graph",
-        col = "#3CA2C8",
-        xlab = "value",
-        ylab = "density",
-        lwd = 3,
-        cex.lab = 1.5,
-        cex.axis = 1.5,
-        cex.main = 1.5,
-        cex.sub = 1.5,
-        xlim = c(input$leftskew - 9 * sqrt(input$leftskew), 0)
-      )
-    },
-    cacheKeyExpr = {
-      list(input$leftskew)
-    })
-    
-    # Matrix of rgamma values
-    data1 <-
-      reactive(matrix(
-        -rgamma(
-          n = input$leftpath * input$leftsize,
-          input$leftskew,
-          beta = 1
-        ),
-        nrow = input$leftsize,
-        ncol = input$leftpath
-      ))
-    
-    # Average of left skewed
-    output$plotleft2 <- renderCachedPlot({
-      matrix <- data1()
-      # store value of mean into matrix matrix.means
-      matrix.means <-
-        matrix(0, nrow = input$leftsize, ncol = input$leftpath)
-      for (j in 1:input$leftpath) {
-        for (i in input$leftsize:1) {
-          matrix.means[i, j] = mean(matrix[1:i, j])
-        }
-      }
-      
-      # define the true mean alpha*beta = 1
-      true.mean = -input$leftskew
-      
-      # define color in different pathes
-      colors = c("#3CA2C8", "#10559A", "#CC6BB1", "#F9C6D7", "#DB4C77")
-      
-      # plot average in different pathes
-      for (i in 1:input$leftpath) {
-        if (i == 1) {
-          plot(
-            1:input$leftsize,
-            matrix.means[, i],
-            main = "Average Graph",
-            xlab = "# of trials so far",
-            ylab = "mean",
-            type = "l",
-            cex.lab = 1.5,
-            cex.axis = 1.5,
-            cex.main = 1.5,
-            cex.sub = 1.5,
-            lwd = 3,
-            col = colors[i],
-            ylim = c(
-              min(matrix.means, true.mean),
-              max(matrix.means, true.mean)
-            )
-          )
-        }
-        if (i > 1) {
-          lines(
-            1:input$leftsize,
-            (matrix.means[, i]),
-            col = colors[i],
-            lwd = 3,
-            ylim = c(
-              min(matrix.means, true.mean),
-              max(matrix.means, true.mean)
-            )
-          )
-        }
-      }
-      
-      # plot the true mean
-      abline(
-        h = true.mean,
-        col = "black",
-        lty = 3,
-        lwd = 3
-      )
-      
-      # make a legend
-      legend(
-        "bottomright",
-        legend = c("True Mean"),
-        box.lwd = 0,
-        box.lty = 0,
-        bg = 'transparent',
-        lty = c(3),
-        lwd = c(2.5),
-        cex = 1.2,
-        col = "black",
-        xpd = TRUE,
-        inset = c(0, 1),
-        horiz = TRUE
-      )
-    },
-    cacheKeyExpr = {
-      list(input$leftpath, input$leftsize, input$leftskew)
-    })
-    
-    # Sum of left skewed
-    output$plotleft3 <- renderCachedPlot({
-      matrix <- data1()
-      # store value of sum into matrix matrix.sum
-      matrix.sum <-
-        matrix(0, nrow = input$leftsize, ncol = input$leftpath)
-      for (j in 1:input$leftpath) {
-        for (i in input$leftsize:1) {
-          matrix.sum[i, j] = mean(matrix[1:i, j]) * i + i * input$leftskew
-        }
-      }
-      
-      # define the true (sum - E(sum) = 0)
-      true.sum = 0
-      
-      # define color in different pathes
-      colors = c("#3CA2C8", "#10559A", "#CC6BB1", "#F9C6D7", "#DB4C77")
-      
-      # plot sum in different pathes
-      for (i in 1:input$leftpath) {
-        if (i == 1) {
-          plot(
-            1:input$leftsize,
-            matrix.sum[, i],
-            main = "Sum Graph",
-            xlab = "# of trials so far",
-            ylab = "sum - E(sum)",
-            type = "l",
-            cex.lab = 1.5,
-            cex.axis = 1.5,
-            cex.main = 1.5,
-            cex.sub = 1.5,
-            lwd = 3,
-            col = colors[i],
-            ylim = c(
-              min(matrix.sum, true.sum),
-              max(matrix.sum, true.sum)
-            )
-          )
-        }
-        if (i > 1) {
-          lines(
-            1:input$leftsize,
-            (matrix.sum[, i]),
-            col = colors[i],
-            lwd = 3,
-            ylim = c(
-              min(matrix.sum, true.sum),
-              max(matrix.sum, true.sum)
-            )
-          )
-        }
-      }
-      
-      # plot the true sum
-      abline(
-        h = true.sum,
-        col = "black",
-        lty = 3,
-        lwd = 3
-      )
-      
-      # make a legend
-      # legend("topright", legend = c("Sum-E(Sum)"),
-      #        lty=c(3), lwd=c(2.5), cex = 1.2,
-      #        col= "black")
-    },
-    cacheKeyExpr = {
-      list(input$leftpath, input$leftsize, input$leftskew)
-    })
-    
-    
-    ###################################################################
-    ## Right skewed
-    ####################################################################
-    
-    # Population of right skewed
-    output$plotright1 <- renderCachedPlot({
-      # plot(seq(0,5,.001),dgamma(seq(0,5,.001),input$rightskew, input$rightskew),
-      #      main="Population Graph", col="#3CA2C8", xlab="value", ylab="density")
-      curve(
-        dgamma(x, shape = input$rightskew, beta = 1),
-        main = "Population Graph",
-        col = "#3CA2C8",
-        xlab = "value",
-        ylab = "density",
-        lwd = 3,
-        cex.lab = 1.5,
-        cex.axis = 1.5,
-        cex.main = 1.5,
-        cex.sub = 1.5,
-        xlim = c(0, input$rightskew + 9 * sqrt(input$rightskew))
-      )
-    },
-    cacheKeyExpr = {
-      list(input$rightskew)
-    })
-    
-    # Matrix of rgamma values
-    data2 <-
-      reactive(matrix(
-        rgamma(
-          n = input$rightpath * input$rightsize,
-          input$rightskew,
-          beta = 1
-        ),
-        nrow = input$rightsize,
-        ncol = input$rightpath
-      ))
-    
-    # Average of right skewed
-    output$plotright2 <- renderCachedPlot({
-      matrix <- data2()
-      # store value of mean into matrix matrix.means
-      matrix.means = matrix(0,
-                            nrow = input$rightsize,
-                            ncol = input$rightpath)
-      for (j in 1:input$rightpath) {
-        for (i in 1:input$rightsize) {
-          matrix.means[i, j] = mean(matrix[1:i, j])
-        }
-      }
-      
-      
-      # define the true mean alpha*beta = 1
-      true.mean = input$rightskew
-      
-      # define color in different pathes
-      colors = c("#3CA2C8", "#10559A", "#CC6BB1", "#F9C6D7", "#DB4C77")
-      
-      # plot average in different pathes
-      for (i in 1:input$rightpath) {
-        if (i == 1) {
-          plot(
-            1:input$rightsize,
-            matrix.means[, i],
-            main = "Average Graph",
-            xlab = "# of trials so far",
-            ylab = "mean",
-            type = "l",
-            cex.lab = 1.5,
-            cex.axis = 1.5,
-            cex.main = 1.5,
-            cex.sub = 1.5,
-            lwd = 3,
-            col = colors[i],
-            ylim = c(
-              min(matrix.means, true.mean),
-              max(matrix.means, true.mean)
-            )
-          )
-        }
-        if (i > 1) {
-          lines(
-            1:input$rightsize,
-            (matrix.means[, i]),
-            col = colors[i],
-            lwd = 3,
-            ylim = c(
-              min(matrix.means, true.mean),
-              max(matrix.means, true.mean)
-            )
-          )
-        }
-      }
-      
-      # plot the true mean
-      abline(
-        h = true.mean,
-        col = "black",
-        lty = 3,
-        lwd = 3
-      )
-      
-      # make a legend
-      legend(
-        "bottomright",
-        legend = c("True Mean"),
-        box.lwd = 0,
-        box.lty = 0,
-        bg = 'transparent',
-        lty = c(3),
-        lwd = c(2.5),
-        cex = 1.2,
-        col = "black",
-        xpd = TRUE,
-        inset = c(0, 1),
-        horiz = TRUE
-      )
-    }, cacheKeyExpr = {
-      list(input$rightpath, input$rightsize, input$rightskew)
-    })
-    
-    # Sum of right skewed
-    output$plotright3 <- renderCachedPlot({
-      matrix <- data2()
-      # store value of sum into matrix matrix.sum
-      matrix.sum <-
-        matrix(0,
-               nrow = input$rightsize,
-               ncol = input$rightpath)
-      for (j in 1:input$rightpath) {
-        for (i in 1:input$rightsize) {
-          matrix.sum[i, j] = mean(matrix[1:i, j]) * i - i * input$rightskew
-        }
-      }
-      
-      # define the true (sum - E(sum) = 0)
-      true.sum = 0
-      
-      # define color in different pathes
-      colors = c("#3CA2C8", "#10559A", "#CC6BB1", "#F9C6D7", "#DB4C77")
-      
-      # plot sum in different pathes
-      for (i in 1:input$rightpath) {
-        if (i == 1) {
-          plot(
-            1:input$rightsize,
-            matrix.sum[, i],
-            main = "Sum Graph",
-            xlab = "# of trials so far",
-            ylab = "sum-E(sum)",
-            type = "l",
-            cex.lab = 1.5,
-            cex.axis = 1.5,
-            cex.main = 1.5,
-            cex.sub = 1.5,
-            lwd = 3,
-            col = colors[i],
-            ylim = c(
-              min(matrix.sum, true.sum),
-              max(matrix.sum, true.sum)
-            )
-          )
-        }
-        if (i > 1) {
-          lines(
-            1:input$rightsize,
-            (matrix.sum[, i]),
-            col = colors[i],
-            lwd = 3,
-            ylim = c(
-              min(matrix.sum, true.sum),
-              max(matrix.sum, true.sum)
-            )
-          )
-        }
-      }
-      
-      #plot the true mean
-      abline(
-        h = true.sum,
-        col = "black",
-        lty = 3,
-        lwd = 3
-      )
-      
-      #make a legend
-      # legend("topright", legend = c("Sum-E(Sum)"),
-      #        lty=c(3), lwd=c(2.5), cex = 1.2,
-      #        col= "black")
-    }, cacheKeyExpr = {
-      list(input$rightpath, input$rightsize, input$rightskew)
-    })
-    
-    ###################################################################
-    ## Symmetric skewed
-    ####################################################################
-    
-    # Population of Symmetric skewed
-    output$plotsymmetric1 <- renderCachedPlot({
-      x <- seq(0, 1, length = input$symsize)
-      dens <-
-        dbeta(x,
-              shape1 = input$inverse,
-              shape2 = input$inverse)
-      
-      # Dealing with peakness = 1 special case
-      if (input$inverse == 1) {
-        plot(
-          x,
-          dens,
-          type = "l",
-          yaxs = "i",
-          xaxs = "i",
-          xlim = c(-0.03, 1.03),
-          cex.lab = 1.5,
-          cex.axis = 1.5,
-          cex.main = 1.5,
-          cex.sub = 1.5,
-          xlab = "value",
-          ylab = "density",
-          main = "Population Graph",
-          col = "red",
-          lwd = 3
-        )
-        segments(0, 0, 0, 1, col = "red", lwd = 3)
-        segments(1, 0, 1, 1, col = "red", lwd = 3)
-        lines(x, dens, col = "red")
-        
-      } else{
-        plot(
-          x,
-          dens,
-          type = "l",
-          yaxs = "i",
-          xaxs = "i",
-          xlim = c(-0.01, 1.01),
-          cex.lab = 1.5,
-          cex.axis = 1.5,
-          cex.main = 1.5,
-          cex.sub = 1.5,
-          xlab = "value",
-          ylab = "density",
-          main = "Population Graph",
-          col = "red",
-          lwd = 3
-        )
-        lines(x, dens, col = "red")
-      }
-      # x <- seq(0, 1, length = input$symsize)
-      # dens <- dbeta(x, shape1 = input$inverse, shape2 = input$inverse)
-      # plot(x, dens, type = "l", yaxs = "i", xaxs = "i", xlim=c(-0.01,1.01),
-      #      cex.lab=1.5, cex.axis=1.5, cex.main=1.5, cex.sub=1.5,
-      #      xlab = "value", ylab = "density", main = "Population Graph",
-      #      col = "red", lwd = 3)
-      # lines(x, dens, col = "red")
-    },
-    cacheKeyExpr = {
-      list(input$symsize, input$inverse)
-    })
-    
-    # Matrix of rbeta values
-    data3 <- reactive(matrix(
-      rbeta(
-        input$sympath * input$symsize,
-        shape1 = input$inverse,
-        shape2 = input$inverse
-      ),
-      nrow = input$symsize,
-      ncol = input$sympath
-    ))
-    
-    # Average of symmetric
-    output$plotsymmetric2 <- renderCachedPlot({
-      matrix <- data3()
-      # store value of mean into matrix matrix.means
-      matrix.means <-
-        matrix(1 / 2, nrow = input$symsize, ncol = input$sympath)
-      for (j in 1:input$sympath) {
-        for (i in 1:input$symsize) {
-          matrix.means[i, j] = mean(matrix[1:i, j])
-        }
-      }
-      
-      # define the true mean
-      true.mean = 1 / 2
-      
-      # define color in different pathes
-      colors = c("#3CA2C8", "#10559A", "#CC6BB1", "#F9C6D7", "#DB4C77")
-      
-      # plot average in different pathes
-      for (i in 1:input$sympath) {
-        if (i == 1) {
-          plot(
-            1:input$symsize,
-            matrix.means[, i],
-            main = "Average Graph",
-            xlab = "# of trials so far",
-            ylab = "mean",
-            type = "l",
-            cex.lab = 1.5,
-            cex.axis = 1.5,
-            cex.main = 1.5,
-            cex.sub = 1.5,
-            lwd = 3,
-            col = colors[i],
-            ylim = c(
-              min(matrix.means, true.mean),
-              max(matrix.means, true.mean)
-            )
-          )
-        }
-        if (i > 1) {
-          lines(
-            1:input$symsize,
-            (matrix.means[, i]),
-            col = colors[i],
-            lwd = 3,
-            ylim = c(
-              min(matrix.means, true.mean),
-              max(matrix.means, true.mean)
-            )
-          )
-        }
-      }
-      
-      # plot the true mean
-      abline(
-        h = true.mean,
-        col = "black",
-        lty = 3,
-        lwd = 3
-      )
-      
-      # make a legend
-      legend(
-        "bottomright",
-        legend = c("True Mean"),
-        box.lwd = 0,
-        box.lty = 0,
-        bg = 'transparent',
-        lty = c(3),
-        lwd = c(2.5),
-        cex = 1.2,
-        col = "black",
-        xpd = TRUE,
-        inset = c(0, 1),
-        horiz = TRUE
-      )
-    },
-    cacheKeyExpr = {
-      list(input$sympath, input$symsize, input$inverse)
-    })
-    
-    # Sum of symmetric
-    output$plotsymmetric3 <- renderCachedPlot({
-      matrix <- data3()
-      # store value of sum into matrix matrix.sum
-      matrix.sum = matrix(1 / 2, nrow = input$symsize, ncol = input$sympath)
-      for (j in 1:input$sympath) {
-        for (i in 1:input$symsize) {
-          matrix.sum[i, j] = mean(matrix[1:i, j]) * i - 0.5 * i
-        }
-      }
-      
-      # define the true mean
-      true.sum = 0
-      
-      # define color in different pathes
-      colors = c("#3CA2C8", "#10559A", "#CC6BB1", "#F9C6D7", "#DB4C77")
-      
-      # plot sum in different pathes
-      for (i in 1:input$sympath) {
-        if (i == 1) {
-          plot(
-            1:input$symsize,
-            matrix.sum[, i],
-            main = "Sum Graph",
-            xlab = "# of trials so far",
-            ylab = "sum-E(sum)",
-            type = "l",
-            cex.lab = 1.5,
-            cex.axis = 1.5,
-            cex.main = 1.5,
-            cex.sub = 1.5,
-            lwd = 3,
-            col = colors[i],
-            ylim = c(
-              min(matrix.sum, true.sum),
-              max(matrix.sum, true.sum)
-            )
-          )
-        }
-        if (i > 1) {
-          lines(
-            1:input$symsize,
-            (matrix.sum[, i]),
-            col = colors[i],
-            lwd = 3,
-            ylim = c(
-              min(matrix.sum, true.sum),
-              max(matrix.sum, true.sum)
-            )
-          )
-        }
-      }
-      
-      # plot the true mean
-      abline(
-        h = true.sum,
-        col = "black",
-        lty = 3,
-        lwd = 3
-      )
-      
-      # make a legend
-      # legend("topright", legend = c("Sum-E(Sum)"),
-      #        lty=c(3), lwd=c(2.5), cex = 1.2,
-      #        col= "black")
-    },
-    cacheKeyExpr = {
-      list(input$symsize, input$sympath, input$inverse)
-    })
-    
-    ###################################################################
-    ## Bimodal
-    ####################################################################
-    # Population for biomodel
-    output$plotbiomodel1 <- renderCachedPlot({
-      a <- data4()
-      t <- 5 / length(a)
-      y <- seq(0 + t, 5, t)
-      z <- seq(5 - t, 0,-t)
-      
-      x <- seq(0, 5, by = 0.005)
-      leftdraw <- dgamma(z, input$leftskew, beta = 1)
-      rightdraw <- dgamma(y, input$rightskew, beta = 1)
-      Z <- input$prop * leftdraw + (1 - input$prop) * rightdraw
-      
-      
-      plot(
-        y,
-        Z,
-        type = "l",
-        yaxs = "i",
-        xaxs = "i",
-        xlab = "value",
-        ylab = "density",
-        main = "Population Graph",
-        cex.lab = 1.5,
-        cex.axis = 1.5,
-        cex.main = 1.5,
-        cex.sub = 1.5,
-        col = "#3CA2C8",
-        lwd = 3
-      )
-      lines(
-        y,
-        Z,
-        type = "l",
-        col = "#3CA2C8",
-        xlab = "",
-        ylab = ""
-      )
-    },
-    cacheKeyExpr = {
-      list(input$leftskew, input$rightskew, input$prop)
-    })
-    
-    # Matrix of rgamma value
-    data4 <-
-      reactive(matrix(
-        mix.synthetic.facing.gamma(
-          N = input$bisize * input$bipath,
-          mix.prob = 1 - input$prop,
-          lower = 0,
-          upper = 6,
-          shape1 = input$leftskew,
-          scale1 = 1,
-          shape2 = input$rightskew,
-          scale2 = 1
-        ),
-        nrow = input$bisize,
-        ncol = input$bipath
-      ))
-    
-    #Average for biomodel
-    output$plotbiomodel2 <- renderCachedPlot({
-      matrix <- data4()
-      # store value of mean into matrix matrix.means
-      matrix.means = matrix(0, nrow = input$bisize, ncol = input$bipath)
-      for (j in 1:input$bipath) {
-        for (i in 1:input$bisize) {
-          matrix.means[i, j] = mean(matrix[1:i, j])
-        }
-      }
-      
-      true.mean = mean(data4())
-      
-      # define color in different pathes
-      colors = c("#3CA2C8", "#10559A", "#CC6BB1", "#F9C6D7", "#DB4C77")
-      
-      # plot average in different pathes
-      for (i in 1:input$bipath) {
-        if (i == 1) {
-          plot(
-            1:input$bisize,
-            matrix.means[, i],
-            main = "Average Graph",
-            xlab = "# of trials so far",
-            ylab = "mean",
-            type = "l",
-            cex.lab = 1.5,
-            cex.axis = 1.5,
-            cex.main = 1.5,
-            cex.sub = 1.5,
-            lwd = 3,
-            col = colors[i],
-            ylim = c(
-              min(matrix.means, true.mean),
-              max(matrix.means, true.mean)
-            )
-          )
-        }
-        if (i > 1) {
-          lines(
-            1:input$bisize,
-            (matrix.means[, i]),
-            col = colors[i],
-            lwd = 3,
-            ylim = c(
-              min(matrix.means, true.mean),
-              max(matrix.means, true.mean)
-            )
-          )
-        }
-      }
-      
-      # plot the true mean
-      abline(
-        h = true.mean,
-        col = "black",
-        lty = 3,
-        lwd = 3
-      )
-      
-      # make a legend
-      legend(
-        "bottomright",
-        legend = c("True Mean"),
-        box.lwd = 0,
-        box.lty = 0,
-        bg = 'transparent',
-        lty = c(3),
-        lwd = c(2.5),
-        cex = 1.2,
-        col = "black",
-        xpd = TRUE,
-        inset = c(0, 1),
-        horiz = TRUE
-      )
-    },
-    cacheKeyExpr = {
-      list(input$bipath,
-           input$bisize,
-           input$leftskew,
-           input$rightskew,
-           input$prop)
-    })
-    
-    # Sum for biomodel
-    output$plotbiomodel3 <- renderCachedPlot({
-      matrix = data4()
-      # store value of sum into matrix matrix.sum
-      matrix.sum = matrix(0, nrow = input$bisize, ncol = input$bipath)
-      for (j in 1:input$bipath) {
-        for (i in 1:input$bisize) {
-          matrix.sum[i, j] = mean(matrix[1:i, j]) * i -  mean(data4()) * i
-        }
-      }
-      
-      #define the true mean
-      true.sum = 0
-      
-      # define color in different pathes
-      colors = c("#3CA2C8", "#10559A", "#CC6BB1", "#F9C6D7", "#DB4C77")
-      
-      # plot sum in different pathes
-      for (i in 1:input$bipath) {
-        if (i == 1) {
-          plot(
-            1:input$bisize,
-            matrix.sum[, i],
-            main = "Sum Graph",
-            xlab = "# of trials so far",
-            ylab = "sum-E(sum)",
-            type = "l",
-            cex.lab = 1.5,
-            cex.axis = 1.5,
-            cex.main = 1.5,
-            cex.sub = 1.5,
-            lwd = 3,
-            col = colors[i],
-            ylim = c(
-              min(matrix.sum, true.sum),
-              max(matrix.sum, true.sum)
-            )
-          )
-        }
-        if (i > 1) {
-          lines(
-            1:input$bisize,
-            (matrix.sum[, i]),
-            col = colors[i],
-            lwd = 3,
-            ylim = c(
-              min(matrix.sum, true.sum),
-              max(matrix.sum, true.sum)
-            )
-          )
-        }
-      }
-      
-      # plot the true mean
-      abline(
-        h = true.sum,
-        col = "black",
-        lty = 3,
-        lwd = 3
-      )
-      
-      # make a legend
-      # legend("topright", legend = c("Sum-E(Sum)"),
-      #        lty=c(3), lwd=c(2.5), cex = 1.2,
-      #        col= "black")
-    },
-    cacheKeyExpr = {
-      list(input$bipath,
-           input$bisize,
-           input$leftskew,
-           input$rightskew,
-           input$prop)
-    })
-    
-    
-    ###################################################################
-    ## Accident Rate
-    ####################################################################
-    
-    # Population of poisson
-    output$poissonpop <- renderCachedPlot({
-      N <- 10000
-      x <- rpois(N, input$poissonmean)
-      hist(
-        x,
-        xlim = c(min(x), max(x)),
-        probability = T,
-        nclass = max(x) - min(x) + 1,
-        cex.lab = 1.5,
-        cex.axis = 1.5,
-        cex.main = 1.5,
-        cex.sub = 1.5,
-        col = 'lightblue',
-        xlab = "# of accidents",
-        ylab = "probability",
-        main = 'Population Graph'
-      )
-    },
-    cacheKeyExpr = {
-      list(input$poissonmean)
-    })
-    
-    # Matrix of rpois values
-    data5 <-
-      reactive(matrix(
-        rpois(input$poissonpath * input$poissonsize,
-              input$poissonmean),
-        nrow = input$poissonsize,
-        ncol = input$poissonpath
-      ))
-    
-    # Average for poisson
-    output$plotpoisson1 <- renderCachedPlot({
-      matrix <- data5()
-      # store value of mean into matrix matrix.means
-      matrix.means <-
-        matrix(0,
-               nrow = input$poissonsize,
-               ncol = input$poissonpath)
-      for (j in 1:input$poissonpath) {
-        for (i in 1:input$poissonsize) {
-          matrix.means[i, j] = mean(matrix[1:i, j])
-        }
-      }
-      
-      # define the true mean
-      true.mean = input$poissonmean
-      
-      # define color in different pathes
-      colors = c("#3CA2C8", "#10559A", "#CC6BB1", "#F9C6D7", "#DB4C77")
-      
-      # plot average in different pathes
-      for (i in 1:input$poissonpath) {
-        if (i == 1) {
-          plot(
-            1:input$poissonsize,
-            matrix.means[, i],
-            main = "Average Graph",
-            xlab = "# of trials so far",
-            ylab = "mean",
-            type = "l",
-            cex.lab = 1.5,
-            cex.axis = 1.5,
-            cex.main = 1.5,
-            cex.sub = 1.5,
-            lwd = 3,
-            col = colors[i],
-            ylim = c(
-              min(matrix.means, true.mean),
-              max(matrix.means, true.mean)
-            )
-          )
-        }
-        if (i > 1) {
-          lines(
-            1:input$poissonsize,
-            (matrix.means[, i]),
-            col = colors[i],
-            lwd = 3,
-            ylim = c(
-              min(matrix.means, true.mean),
-              max(matrix.means, true.mean)
-            )
-          )
-        }
-      }
-      
-      # plot the true mean
-      abline(
-        h = true.mean,
-        col = "black",
-        lty = 3,
-        lwd = 3
-      )
-      
-      # make a legend
-      legend(
-        "bottomright",
-        legend = c("True Mean"),
-        box.lwd = 0,
-        box.lty = 0,
-        bg = 'transparent',
-        lty = c(3),
-        lwd = c(2.5),
-        cex = 1.2,
-        col = "black",
-        xpd = TRUE,
-        inset = c(0, 1),
-        horiz = TRUE
-      )
-    },
-    cacheKeyExpr = {
-      list(input$poissonmean,
-           input$poissonpath,
-           input$poissonsize)
-    })
-    
-    # Sum for accident rate
-    output$plotpoisson2 <- renderCachedPlot({
-      matrix <- data5()
-      # store value of sum into matrix matrix.sum
-      matrix.sum <-
-        matrix(0,
-               nrow = input$poissonsize,
-               ncol = input$poissonpath)
-      for (j in 1:input$poissonpath) {
-        for (i in 1:input$poissonsize) {
-          matrix.sum[i, j] = mean(matrix[1:i, j]) * i - input$poissonmean * i
-        }
-      }
-      
-      # define the true (sum - E(sum) = 0)
-      true.sum = 0
-      
-      # define color in different pathes
-      colors = c("#3CA2C8", "#10559A", "#CC6BB1", "#F9C6D7", "#DB4C77")
-      
-      # plot sum in different pathes
-      for (i in 1:input$poissonpath) {
-        if (i == 1) {
-          plot(
-            1:input$poissonsize,
-            matrix.sum[, i],
-            main = "Sum Graph",
-            xlab = "# of trials so far",
-            ylab = "Sum-E(Sum)",
-            type = "l",
-            cex.lab = 1.5,
-            cex.axis = 1.5,
-            cex.main = 1.5,
-            cex.sub = 1.5,
-            lwd = 3,
-            col = colors[i],
-            ylim = c(
-              min(matrix.sum, true.sum),
-              max(matrix.sum, true.sum)
-            )
-          )
-        }
-        if (i > 1) {
-          lines(
-            1:input$poissonsize,
-            (matrix.sum[, i]),
-            col = colors[i],
-            lwd = 3,
-            ylim = c(
-              min(matrix.sum, true.sum),
-              max(matrix.sum, true.sum)
-            )
-          )
-        }
-      }
-      
-      # plot the true mean
-      abline(
-        h = true.sum,
-        col = "black",
-        lty = 3,
-        lwd = 3
-      )
-      
-      # make a legend
-      # legend("topright", legend = c("Sum-E(Sum)"),
-      #        lty=c(3), lwd=c(2.5), cex = 1.2,
-      #        col= "black")
-    },
-    cacheKeyExpr = {
-      list(input$poissonmean,
-           input$poissonpath,
-           input$poissonsize)
-    })
-    
-    ###################################################################
-    ## Astrugluas
-    ####################################################################
-    
-    # die results
-    die <- reactive({
-      die <- c(rep(1, 1), rep(3, 4), rep(4, 4), rep(6, 1))
-    })
-    
-    # Population of Astragalus
-    output$pop <- renderPlot({
-      a = min(die())
-      b = max(die())
-      foo <- hist(
-        x = die() + 0.001,
-        breaks = b - a,
-        probability = T,
-        xaxt = "n",
-        cex.lab = 1.5,
-        cex.axis = 1.5,
-        cex.main = 1.5,
-        cex.sub = 1.5,
-        col = 'lightblue',
-        xlab = "# on roll of Astragalus",
-        ylab = "probability",
-        main = "Population Graph"
-      )
-      axis(side = 1,
-           at = foo$mids,
-           labels = seq(a, b))
-      
-      # df=data.frame(Number=die())
-      #
-      # ggplot(df,aes(x=die(), y=..count..)) + geom_histogram(binwidth = 1, fill = "steelblue")+
-      #   labs(title = "Population Graph", x="# on roll of Astragalus", y="probability") +
-      #   scale_x_continuous(breaks = seq(0, 7, by = 1)) +
-      #   theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
-      #         panel.background = element_blank(), axis.title = element_text(size=15, face = "bold"),
-      #         title = element_text(size=15, face = "bold"), plot.title = element_text(hjust = 0.5))
-    })
-    
-    # Matrix of sample values
-    drawAdie <-
-      reactive(matrix(
-        sample(die(), input$aspath * input$assize,
-               replace = TRUE),
-        nrow = input$assize,
-        ncol = input$aspath
-      ))
-    
-    # Average of Astrugluas
-    output$line2 <- renderCachedPlot({
-      matrix = drawAdie()
-      # store value of mean into matrix matrix.means
-      matrix.means <-
-        matrix(0, nrow = input$assize, ncol = input$aspath)
-      for (j in 1:input$aspath) {
-        for (i in 1:input$assize) {
-          matrix.means[i, j] = mean(matrix[1:i, j])
-        }
-      }
-      
-      # define the true mean
-      true.mean = 3.5
-      
-      # define color in different pathes
-      colors = c("#3CA2C8", "#10559A", "#CC6BB1", "#F9C6D7", "#DB4C77")
-      
-      # plot average in different pathes
-      for (i in 1:input$aspath) {
-        if (i == 1) {
-          plot(
-            1:input$assize,
-            matrix.means[, i],
-            type = "l",
-            main = "Average Graph",
-            cex.lab = 1.5,
-            cex.axis = 1.5,
-            cex.main = 1.5,
-            cex.sub = 1.5,
-            col = "red",
-            lwd = 3,
-            xlab = "# of trials so far",
-            ylab = "mean",
-            ylim = c(
-              min(matrix.means, true.mean),
-              max(matrix.means, true.mean)
-            )
-          )
-        }
-        if (i > 1) {
-          lines(
-            1:input$assize,
-            (matrix.means[, i]),
-            col = colors[i],
-            lwd = 5,
-            ylim = c(
-              min(matrix.means, true.mean),
-              max(matrix.means, true.mean)
-            )
-          )
-        }
-      }
-      
-      # plot the true mean
-      abline(
-        h = true.mean,
-        col = "black",
-        lty = 3,
-        lwd = 3
-      )
-      
-      # make a legend
-      legend(
-        "bottomright",
-        legend = c("True Mean"),
-        box.lwd = 0,
-        box.lty = 0,
-        bg = 'transparent',
-        lty = c(3),
-        lwd = c(2.5),
-        cex = 1.2,
-        col = "black",
-        xpd = TRUE,
-        inset = c(0, 1),
-        horiz = TRUE
-      )
-    },
-    cacheKeyExpr = {
-      list(input$aspath, input$assize)
-    })
-    
-    # Sum of Astrugluas
-    output$line1 <- renderCachedPlot ({
-      matrix = drawAdie()
-      matrix.sum = matrix(0, nrow = input$assize, ncol = input$aspath)
-      for (j in 1:input$aspath) {
-        for (i in 1:input$assize) {
-          matrix.sum[i, j] = mean(matrix[1:i, j]) * i - 3.5 * i
-        }
-      }
-      
-      # define the true sum
-      true.sum = 0
-      
-      # define color in different pathes
-      colors = c("#3CA2C8", "#10559A", "#CC6BB1", "#F9C6D7", "#DB4C77")
-      
-      for (i in 1:input$aspath) {
-        if (i == 1) {
-          plot(
-            1:input$assize,
-            matrix.sum[, i],
-            type = "l",
-            main = "Sum Graph",
-            cex.lab = 1.5,
-            cex.axis = 1.5,
-            cex.main = 1.5,
-            cex.sub = 1.5,
-            lwd = 5,
-            col = "red",
-            xlab = "# of trials so far",
-            ylab = "sum-E(sum)",
-            ylim = c(
-              min(matrix.sum, true.sum),
-              max(matrix.sum, true.sum)
-            )
-          )
-        }
-        
-        if (i > 1) {
-          lines(
-            1:input$assize,
-            (matrix.sum[, i]),
-            col = colors[i],
-            lwd = 5,
-            ylim = c(
-              min(matrix.sum, true.sum),
-              max(matrix.sum, true.sum)
-            )
-          )
-        }
-      }
-      # plot the true mean
-      abline(
-        h = true.sum,
-        col = "black",
-        lty = 3,
-        lwd = 3
-      )
-      
-      # make a legend
-      # legend("topright", legend = c("Sum-E(Sum)"),
-      #        lty=c(3), lwd=c(2.5),cex = 1.2,
-      #        col= "black")
-      
-    },
-    cacheKeyExpr = {
-      list(input$aspath, input$assize)
-    })
-    
-    ###################################################################
-    ## iPOD SHUFFLE
-    ####################################################################
-    
-    #Population and Sum for IPOD
-    
-    # set up songs from four types
-    songs <- reactive({
-      songs <- c(rep(input$s1),
-                 rep(input$s2),
-                 rep(input$s3),
-                 rep(input$s4))
-    })
-    
-    # average songs in the IPOD
-    avg_songs <- reactive({
-      mean(songs())
-    })
-    
-    # total songs in the IPOD
-    # output$songs_box <- renderPrint({
-    #   sum(songs())
-    #
-    # })
-    
-    # Jazz percent
-    output$Jazz_percent <- renderPrint({
-      cat(round(input$s1 / sum(songs()), digits = 2))
-    })
-    
-    # Rock percent
-    output$Rock_percent <- renderPrint({
-      cat(round(input$s2 / sum(songs()), digits = 2))
-    })
-    
-    # Country percent
-    output$Country_percent <- renderPrint({
-      cat(round(input$s3 / sum(songs()), digits = 2))
-    })
-    
-    # Hip-pop percent
-    output$Hiphop_percent <- renderPrint({
-      cat(round(input$s4 / sum(songs()), digits = 2))
-    })
-    
-    ############################################
-    # Plot with bar plot with 4 categories songs
-    
-    # Jazz population plot
-    output$Plot1 <- renderCachedPlot({
-      pjazz <- input$s1 / sum(songs())
-      count <- c(pjazz * input$ipodsize, (1 - pjazz) * input$ipodsize)
-      barplot(
-        count,
-        main = "Population Graph",
-        xlab = "Jazz vs Other music"
-        ,
-        ylab = "probability",
-        col = 'lightblue',
-        space = 0.3,
-        width = 0.1,
-        cex.lab = 1.5,
-        cex.axis = 1.5,
-        cex.main = 1.5,
-        cex.sub = 1.5,
-        names.arg = c("Jazz", "Other music")
-      )
-      # n <- input$ipodsize
-      # x <- seq(0, n, by = 1)
-      # plot (x, dbinom(x, n, pjazz, log = FALSE), type = "l", xlab = "values",ylab = "density",
-      #       main = "Population Graph",cex.lab=1.5, cex.axis=1.5, cex.main=1.5, cex.sub=1.5,
-      #       col="#3CA2C8", lwd=5)
-    },
-    cacheKeyExpr = {
-      list(input$s1,
-           input$s2,
-           input$s3,
-           input$s3,
-           input$s4,
-           input$ipodsize)
-    })
-    
-    # Rock population plot
-    output$Plot2 <- renderCachedPlot({
-      prock <- input$s2 / sum(songs())
-      count <- c(prock * input$ipodsize, (1 - prock) * input$ipodsize)
-      barplot(
-        count,
-        main = "Population Graph",
-        xlab = "Rock vs Other music"
-        ,
-        ylab = "probability",
-        col = 'lightblue',
-        cex.lab = 1.5,
-        cex.axis = 1.5,
-        cex.main = 1.5,
-        cex.sub = 1.5,
-        names.arg = c("Rock", "Other music")
-      )
-      # n <- input$ipodsize
-      # x <- seq(0, n, by = 1)
-      # plot (x, dbinom(x, n, prock, log = FALSE), type = "l", xlab = "values",ylab = "density",
-      #       main = "Population Graph",cex.lab=1.5, cex.axis=1.5, cex.main=1.5, cex.sub=1.5,
-      #       col="#3CA2C8", lwd=5)
-    },
-    cacheKeyExpr = {
-      list(input$s1,
-           input$s2,
-           input$s3,
-           input$s3,
-           input$s4,
-           input$ipodsize)
-    })
-    
-    # Country population plot
-    output$Plot3 <- renderCachedPlot({
-      pcountry <- input$s3 / sum(songs())
-      count <-
-        c(pcountry * input$ipodsize, (1 - pcountry) * input$ipodsize)
-      barplot(
-        count,
-        main = "Population Graph",
-        xlab = "Country vs Other music"
-        ,
-        ylab = "probability",
-        col = 'lightblue',
-        cex.lab = 1.5,
-        cex.axis = 1.5,
-        cex.main = 1.5,
-        cex.sub = 1.5,
-        names.arg = c("Country", "Other music")
-      )
-      # n <- input$ipodsize
-      # x <- seq(0, n, by = 1)
-      # plot (x, dbinom(x, n, pcountry, log = FALSE), type = "l", xlab = "values",ylab = "density",
-      #       main = "Population Graph",cex.lab=1.5, cex.axis=1.5, cex.main=1.5, cex.sub=1.5,
-      #       col="#3CA2C8", lwd=5)
-    },
-    cacheKeyExpr = {
-      list(input$s1,
-           input$s2,
-           input$s3,
-           input$s3,
-           input$s4,
-           input$ipodsize)
-    })
-    
-    #Hip-pop population plot
-    output$Plot4 <- renderCachedPlot({
-      phiphop <- input$s4 / sum(songs())
-      count <- c(phiphop * input$ipodsize, (1 - phiphop) * input$ipodsize)
-      barplot(
-        count,
-        main = "Population Graph",
-        xlab = "Hip-hop vs Other music"
-        ,
-        ylab = "probability",
-        col = 'lightblue',
-        cex.lab = 1.5,
-        cex.axis = 1.5,
-        cex.main = 1.5,
-        cex.sub = 1.5,
-        names.arg = c("Hip-hop", "Other music")
-      )
-      # n <- input$ipodsize
-      # x <- seq(0, n, by = 1)
-      # plot (x, dbinom(x, n, phiphop, log = FALSE), type = "l", xlab = "values",ylab = "density",
-      #       main = "Population Graph",cex.lab=1.5, cex.axis=1.5, cex.main=1.5, cex.sub=1.5,
-      #       col="#3CA2C8", lwd=5)
-    }, cacheKeyExpr = {
-      list(input$s1,
-           input$s2,
-           input$s3,
-           input$s3,
-           input$s4,
-           input$ipodsize)
-    })
-    
-    ############################################
-    # Average Plot with 4 categories songs
-    
-    # Matrix of Songs from 4 types
-    Jazzdata <-
-      reactive(matrix(
-        rbinom(
-          input$ipodpath * input$ipodsize,
-          size = 1,
-          prob = input$s1 / sum(songs())
-        ),
-        nrow = input$ipodsize,
-        ncol = input$ipodpath
-      ))
-    Rockdata <-
-      reactive(matrix(
-        rbinom(
-          input$ipodpath * input$ipodsize,
-          size = 1,
-          prob = input$s2 / sum(songs())
-        ),
-        nrow = input$ipodsize,
-        ncol = input$ipodpath
-      ))
-    Countrydata <-
-      reactive(matrix(
-        rbinom(
-          input$ipodpath * input$ipodsize,
-          size = 1,
-          prob = input$s3 / sum(songs())
-        ),
-        nrow = input$ipodsize,
-        ncol = input$ipodpath
-      ))
-    Hiphopdata <-
-      reactive(matrix(
-        rbinom(
-          input$ipodpath * input$ipodsize,
-          size = 1,
-          prob = input$s4 / sum(songs())
-        ),
-        nrow = input$ipodsize,
-        ncol = input$ipodpath
-      ))
-    
-    # JAZZ Average Plot
-    output$Plot01 <- renderCachedPlot({
-      matrix <- Jazzdata()
-      # store value of mean into matrix matrix.means
-      matrix.means <-
-        matrix(0, nrow = input$ipodsize, ncol = input$ipodpath)
-      for (j in 1:input$ipodpath) {
-        for (i in 1:input$ipodsize) {
-          matrix.means[i, j] = mean(matrix[1:i, j])
-        }
-      }
-      
-      # define the true mean
-      true.mean = input$s1 / sum(songs())
-      
-      # define color in different pathes
-      colors = c("#3CA2C8", "#10559A", "#CC6BB1", "#F9C6D7", "#DB4C77")
-      
-      # plot average in different pathes
-      for (i in 1:input$ipodpath) {
-        if (i == 1) {
-          plot(
-            1:input$ipodsize,
-            matrix.means[, i],
-            main = "Average Graph",
-            xlab = "# of trials so far",
-            ylab = "proportion",
-            type = "l",
-            cex.lab = 1.5,
-            cex.axis = 1.5,
-            cex.main = 1.5,
-            cex.sub = 1.5,
-            lwd = 3,
-            col = colors[i],
-            ylim = c(
-              min(matrix.means, true.mean),
-              max(matrix.means, true.mean)
-            )
-          )
-        }
-        if (i > 1) {
-          lines(1:input$ipodsize,
-                (matrix.means[, i]),
-                col = colors[i],
-                lwd = 3)
-        }
-      }
-      
-      # plot the true mean
-      abline(
-        h = true.mean,
-        col = "black",
-        lty = 3,
-        lwd = 3
-      )
-      
-      # make a legend
-      legend(
-        "bottomright",
-        legend = c("True Proportion"),
-        box.lwd = 0,
-        box.lty = 0,
-        bg = 'transparent',
-        lty = c(3),
-        lwd = c(2.5),
-        cex = 1.2,
-        col = "black",
-        xpd = TRUE,
-        inset = c(0, 1),
-        horiz = TRUE
-      )
-    },
-    cacheKeyExpr = {
-      list(
-        input$s1,
-        input$s2,
-        input$s3,
-        input$s3,
-        input$s4,
-        input$ipodsize,
-        input$ipodpath
-      )
-    })
-    
-    # Rock Average Plot
-    output$Plot02 <- renderCachedPlot({
-      matrix <- Rockdata()
-      # store value of mean into matrix matrix.means
-      matrix.means <-
-        matrix(0, nrow = input$ipodsize, ncol = input$ipodpath)
-      for (j in 1:input$ipodpath) {
-        for (i in 1:input$ipodsize) {
-          matrix.means[i, j] = mean(matrix[1:i, j])
-        }
-      }
-      
-      # define the true mean
-      true.mean = input$s2 / sum(songs())
-      
-      # define color in different pathes
-      colors = c("#3CA2C8", "#10559A", "#CC6BB1", "#F9C6D7", "#DB4C77")
-      
-      # plot average in different pathes
-      for (i in 1:input$ipodpath) {
-        if (i == 1) {
-          plot(
-            1:input$ipodsize,
-            matrix.means[, i],
-            main = "Average Graph",
-            xlab = "# of trials so far",
-            ylab = "proportion",
-            type = "l",
-            cex.lab = 1.5,
-            cex.axis = 1.5,
-            cex.main = 1.5,
-            cex.sub = 1.5,
-            lwd = 3,
-            col = colors[i],
-            ylim = c(
-              min(matrix.means, true.mean),
-              max(matrix.means, true.mean)
-            )
-          )
-        }
-        if (i > 1) {
-          lines(1:input$ipodsize,
-                (matrix.means[, i]),
-                col = colors[i],
-                lwd = 3)
-        }
-      }
-      
-      # plot the true mean
-      abline(
-        h = true.mean,
-        col = "black",
-        lty = 3,
-        lwd = 3
-      )
-      
-      # make a legend
-      legend(
-        "bottomright",
-        legend = c("True Proportion"),
-        box.lwd = 0,
-        box.lty = 0,
-        bg = 'transparent',
-        lty = c(3),
-        lwd = c(2.5),
-        cex = 1.2,
-        col = "black",
-        xpd = TRUE,
-        inset = c(0, 1),
-        horiz = TRUE
-      )
-    },
-    cacheKeyExpr = {
-      list(
-        input$s1,
-        input$s2,
-        input$s3,
-        input$s3,
-        input$s4,
-        input$ipodsize,
-        input$ipodpath
-      )
-    })
-    
-    # Country Average Plot
-    output$Plot03 <- renderCachedPlot({
-      matrix <- Countrydata()
-      # store value of mean into matrix matrix.means
-      matrix.means <-
-        matrix(0, nrow = input$ipodsize, ncol = input$ipodpath)
-      for (j in 1:input$ipodpath) {
-        for (i in 1:input$ipodsize) {
-          matrix.means[i, j] = mean(matrix[1:i, j])
-        }
-      }
-      
-      # define the true mean
-      true.mean = input$s3 / sum(songs())
-      
-      # define color in different pathes
-      colors = c("#3CA2C8", "#10559A", "#CC6BB1", "#F9C6D7", "#DB4C77")
-      
-      # plot average in different pathes
-      for (i in 1:input$ipodpath) {
-        if (i == 1) {
-          plot(
-            1:input$ipodsize,
-            matrix.means[, i],
-            main = "Average Graph",
-            xlab = "# of trials so far",
-            ylab = "proportion",
-            type = "l",
-            cex.lab = 1.5,
-            cex.axis = 1.5,
-            cex.main = 1.5,
-            cex.sub = 1.5,
-            lwd = 3,
-            col = colors[i],
-            ylim = c(
-              min(matrix.means, true.mean),
-              max(matrix.means, true.mean)
-            )
-          )
-        }
-        if (i > 1) {
-          lines(1:input$ipodsize,
-                (matrix.means[, i]),
-                col = colors[i],
-                lwd = 3)
-        }
-      }
-      
-      # plot the true mean
-      abline(
-        h = true.mean,
-        col = "black",
-        lty = 3,
-        lwd = 3
-      )
-      
-      # make a legend
-      legend(
-        "bottomright",
-        legend = c("True Proportion"),
-        box.lwd = 0,
-        box.lty = 0,
-        bg = 'transparent',
-        lty = c(3),
-        lwd = c(2.5),
-        cex = 1.2,
-        col = "black",
-        xpd = TRUE,
-        inset = c(0, 1),
-        horiz = TRUE
-      )
-    },
-    cacheKeyExpr = {
-      list(
-        input$s1,
-        input$s2,
-        input$s3,
-        input$s3,
-        input$s4,
-        input$ipodsize,
-        input$ipodpath
-      )
-    })
-    
-    # Hip-hop Average Plot
-    output$Plot04 <- renderCachedPlot({
-      matrix <-  Hiphopdata()
-      # store value of mean into matrix matrix.means
-      matrix.means <-
-        matrix(0, nrow = input$ipodsize, ncol = input$ipodpath)
-      for (j in 1:input$ipodpath) {
-        for (i in 1:input$ipodsize) {
-          matrix.means[i, j] = mean(matrix[1:i, j])
-        }
-      }
-      
-      # define the true mean
-      true.mean = input$s4 / sum(songs())
-      
-      # define color in different pathes
-      colors = c("#3CA2C8", "#10559A", "#CC6BB1", "#F9C6D7", "#DB4C77")
-      
-      # plot average in different pathes
-      for (i in 1:input$ipodpath) {
-        if (i == 1) {
-          plot(
-            1:input$ipodsize,
-            matrix.means[, i],
-            main = "Average Graph",
-            xlab = "# of trials so far",
-            ylab = "proportion",
-            type = "l",
-            cex.lab = 1.5,
-            cex.axis = 1.5,
-            cex.main = 1.5,
-            cex.sub = 1.5,
-            lwd = 3,
-            col = colors[i],
-            ylim = c(
-              min(matrix.means, true.mean),
-              max(matrix.means, true.mean)
-            )
-          )
-        }
-        if (i > 1) {
-          lines(1:input$ipodsize,
-                (matrix.means[, i]),
-                col = colors[i],
-                lwd = 3)
-        }
-      }
-      
-      # plot the true mean
-      abline(
-        h = true.mean,
-        col = "black",
-        lty = 3,
-        lwd = 3
-      )
-      
-      # make a legend
-      legend(
-        "bottomright",
-        legend = c("True Proportion"),
-        box.lwd = 0,
-        box.lty = 0,
-        bg = 'transparent',
-        lty = c(3),
-        lwd = c(2.5),
-        cex = 1.2,
-        col = "black",
-        xpd = TRUE,
-        inset = c(0, 1),
-        horiz = TRUE
-      )
-    },
-    cacheKeyExpr = {
-      list(
-        input$s1,
-        input$s2,
-        input$s3,
-        input$s3,
-        input$s4,
-        input$ipodsize,
-        input$ipodpath
-      )
-    })
-    
-    
-    ############################################
-    # Sum Plot with 4 categories songs
-    
-    # JAZZ SUM PLOT
-    output$Plot10 <- renderCachedPlot({
-      matrix <- Jazzdata()
-      # store value of sum into matrix matrix.sum
-      matrix.sum <-
-        matrix(0, nrow = input$ipodsize, ncol = input$ipodpath)
-      for (j in 1:input$ipodpath) {
-        for (i in 1:input$ipodsize) {
-          matrix.sum[i, j] = mean(matrix[1:i, j]) * i - i * (input$s1 / sum(songs()))
-        }
-      }
-      
-      # define the true sum
-      true.sum = 0
-      
-      # define color in different pathes
-      colors = c("#3CA2C8", "#10559A", "#CC6BB1", "#F9C6D7", "#DB4C77")
-      
-      # plot sum in different pathes
-      for (i in 1:input$ipodpath) {
-        if (i == 1) {
-          plot(
-            1:input$ipodsize,
-            matrix.sum[, i],
-            main = "Sum Graph",
-            xlab = "# of trials so far",
-            ylab = "count - E(count)",
-            type = "l",
-            cex.lab = 1.5,
-            cex.axis = 1.5,
-            cex.main = 1.5,
-            cex.sub = 1.5,
-            lwd = 3,
-            col = colors[i],
-            ylim = c(
-              min(matrix.sum, true.sum),
-              max(matrix.sum, true.sum)
-            )
-          )
-        }
-        if (i > 1) {
-          lines(
-            1:input$ipodsize,
-            (matrix.sum[, i]),
-            col = colors[i],
-            lwd = 3,
-            ylim = c(
-              min(matrix.sum, true.sum),
-              max(matrix.sum, true.sum)
-            )
-          )
-        }
-      }
-      
-      # plot the true sum
-      abline(
-        h = true.sum,
-        col = "black",
-        lty = 3,
-        lwd = 3
-      )
-      
-      # make a legend
-      # legend("topright", legend = c("Sum-E(Sum)"),
-      #        lty=c(3), lwd=c(2.5), cex = 1.2,
-      #        col= "black")
-      
-    },
-    cacheKeyExpr = {
-      list(
-        input$s1,
-        input$s2,
-        input$s3,
-        input$s3,
-        input$s4,
-        input$ipodsize,
-        input$ipodpath
-      )
-    })
-    
-    # Rock SUM PLOT
-    output$Plot20 <- renderCachedPlot({
-      matrix <- Rockdata()
-      # store value of sum into matrix matrix.sum
-      matrix.sum <-
-        matrix(0, nrow = input$ipodsize, ncol = input$ipodpath)
-      for (j in 1:input$ipodpath) {
-        for (i in 1:input$ipodsize) {
-          matrix.sum[i, j] = mean(matrix[1:i, j]) * i - i * (input$s2 / sum(songs()))
-        }
-      }
-      
-      # define the true sum
-      true.sum = 0
-      
-      # define color in different pathes
-      colors = c("#3CA2C8", "#10559A", "#CC6BB1", "#F9C6D7", "#DB4C77")
-      
-      # plot sum in different pathes
-      for (i in 1:input$ipodpath) {
-        if (i == 1) {
-          plot(
-            1:input$ipodsize,
-            matrix.sum[, i],
-            main = "Sum Graph",
-            xlab = "# of trials so far",
-            ylab = "count - E(count)",
-            type = "l",
-            cex.lab = 1.5,
-            cex.axis = 1.5,
-            cex.main = 1.5,
-            cex.sub = 1.5,
-            lwd = 3,
-            col = colors[i],
-            ylim = c(
-              min(matrix.sum, true.sum),
-              max(matrix.sum, true.sum)
-            )
-          )
-        }
-        if (i > 1) {
-          lines(
-            1:input$ipodsize,
-            (matrix.sum[, i]),
-            col = colors[i],
-            lwd = 3,
-            ylim = c(
-              min(matrix.sum, true.sum),
-              max(matrix.sum, true.sum)
-            )
-          )
-        }
-      }
-      
-      # plot the true sum
-      abline(
-        h = true.sum,
-        col = "black",
-        lty = 3,
-        lwd = 3
-      )
-      
-      # make a legend
-      # legend("topright", legend = c("Sum-E(Sum)"),
-      #        lty=c(3), lwd=c(2.5), cex = 1.2,
-      #        col= "black")
-      
-    },
-    cacheKeyExpr = {
-      list(
-        input$s1,
-        input$s2,
-        input$s3,
-        input$s3,
-        input$s4,
-        input$ipodsize,
-        input$ipodpath
-      )
-    })
-    
-    # Country SUM PLOT
-    output$Plot30 <- renderCachedPlot({
-      matrix <- Countrydata()
-      # store value of sum into matrix matrix.sum
-      matrix.sum <-
-        matrix(0, nrow = input$ipodsize, ncol = input$ipodpath)
-      for (j in 1:input$ipodpath) {
-        for (i in 1:input$ipodsize) {
-          matrix.sum[i, j] = mean(matrix[1:i, j]) * i - i * (input$s3 / sum(songs()))
-        }
-      }
-      
-      # define the true sum
-      true.sum = 0
-      
-      # define color in different pathes
-      colors = c("#3CA2C8", "#10559A", "#CC6BB1", "#F9C6D7", "#DB4C77")
-      
-      # plot sum in different pathes
-      for (i in 1:input$ipodpath) {
-        if (i == 1) {
-          plot(
-            1:input$ipodsize,
-            matrix.sum[, i],
-            main = "Sum Graph",
-            xlab = "# of trials so far",
-            ylab = "count - E(count)",
-            type = "l",
-            cex.lab = 1.5,
-            cex.axis = 1.5,
-            cex.main = 1.5,
-            cex.sub = 1.5,
-            lwd = 3,
-            col = colors[i],
-            ylim = c(
-              min(matrix.sum, true.sum),
-              max(matrix.sum, true.sum)
-            )
-          )
-        }
-        if (i > 1) {
-          lines(
-            1:input$ipodsize,
-            (matrix.sum[, i]),
-            col = colors[i],
-            lwd = 3,
-            ylim = c(
-              min(matrix.sum, true.sum),
-              max(matrix.sum, true.sum)
-            )
-          )
-        }
-      }
-      
-      # plot the true sum
-      abline(
-        h = true.sum,
-        col = "black",
-        lty = 3,
-        lwd = 3
-      )
-      
-      # make a legend
-      # legend("topright", legend = c("Sum-E(Sum)"),
-      #        lty=c(3), lwd=c(2.5), cex = 1.2,
-      #        col= "black")
-      
-    },
-    cacheKeyExpr = {
-      list(
-        input$s1,
-        input$s2,
-        input$s3,
-        input$s3,
-        input$s4,
-        input$ipodsize,
-        input$ipodpath
-      )
-    })
-    
-    # Hip_Hop SUM PLOT
-    output$Plot40 <- renderCachedPlot({
-      matrix <-  Hiphopdata()
-      # store value of sum into matrix matrix.sum
-      matrix.sum <-
-        matrix(0, nrow = input$ipodsize, ncol = input$ipodpath)
-      for (j in 1:input$ipodpath) {
-        for (i in 1:input$ipodsize) {
-          matrix.sum[i, j] = mean(matrix[1:i, j]) * i - i * (input$s4 / sum(songs()))
-        }
-      }
-      
-      # define the true sum
-      true.sum = 0
-      
-      # define color in different pathes
-      colors = c("#3CA2C8", "#10559A", "#CC6BB1", "#F9C6D7", "#DB4C77")
-      
-      # plot sum in different pathes
-      for (i in 1:input$ipodpath) {
-        if (i == 1) {
-          plot(
-            1:input$ipodsize,
-            matrix.sum[, i],
-            main = "Sum Graph",
-            xlab = "# of trials so far",
-            ylab = "count - E(count)",
-            type = "l",
-            cex.lab = 1.5,
-            cex.axis = 1.5,
-            cex.main = 1.5,
-            cex.sub = 1.5,
-            lwd = 3,
-            col = colors[i],
-            ylim = c(
-              min(matrix.sum, true.sum),
-              max(matrix.sum, true.sum)
-            )
-          )
-        }
-        if (i > 1) {
-          lines(
-            1:input$ipodsize,
-            (matrix.sum[, i]),
-            col = colors[i],
-            lwd = 3,
-            ylim = c(
-              min(matrix.sum, true.sum),
-              max(matrix.sum, true.sum)
-            )
-          )
-        }
-      }
-      
-      # plot the true sum
-      abline(
-        h = true.sum,
-        col = "black",
-        lty = 3,
-        lwd = 3
-      )
-      
-      # make a legend
-      # legend("topright", legend = c("Sum-E(Sum)"),
-      #        lty=c(3), lwd=c(2.5), cex = 1.2,
-      #        col= "black")
-    },
-    cacheKeyExpr = {
-      list(
-        input$s1,
-        input$s2,
-        input$s3,
-        input$s3,
-        input$s4,
-        input$ipodsize,
-        input$ipodpath
-      )
-    })
-    
+  cacheKeyExpr = {
+    list(input$leftskew)
   })
   
+  # Matrix of rgamma values
+  data1 <-
+    reactive(matrix(
+      -rgamma(
+        n = input$leftpath * input$leftsize,
+        input$leftskew,
+        beta = 1
+      ),
+      nrow = input$leftsize,
+      ncol = input$leftpath
+      ))
+  
+    # Average of left skewed
+    output$plotleft2 <- renderCachedPlot({
+    
+    # Define the true mean alpha*beta = 1
+    trueMean = -input$leftskew
+    
+    # Plot average in different paths
+    makeMeansPlot(input$leftpath, input$leftsize, matrixMeans(input$leftpath, input$leftsize, data1()), trueMean)
+    
+  },
+  cacheKeyExpr = {
+    list(input$leftpath, input$leftsize, input$leftskew)
+  })
+  
+  # Sum of left skewed
+  output$plotleft3 <- renderCachedPlot({
+    matrix <- data1()
+    
+    # Store value of sum into matrix matrixSum
+    matrixSum <-
+      matrix(0, nrow = input$leftsize, ncol = input$leftpath)
+    for (j in 1:input$leftpath) {
+      for (i in input$leftsize:1) {
+        matrixSum[i, j] = mean(matrix[1:i, j]) * i + i * input$leftskew
+      }
+    }
+    
+    # Define the true (sum - E(sum) = 0)
+    trueSum = 0
+    
+    # Plot sum in different paths
+    makeSumPlot(input$leftpath, input$leftsize, matrixSum, trueSum)
+    
+  },
+  cacheKeyExpr = {
+    list(input$leftpath, input$leftsize, input$leftskew)
+  })
+  
+  
+  ###################################################################
+  ## Right skewed
+  ####################################################################
+  
+  # Population of right skewed
+  output$plotright1 <- renderCachedPlot({
+    # Define parameters for density plot
+    x <- seq(0, input$rightskew + 9 * sqrt(input$rightskew), length = input$symsize)  
+    y <- dgamma(x, shape = input$rightskew, beta = 1)
+    data<-data.frame(x=x, y=y)
+    
+    # Make the density plot
+    makeDensityPlot(data=data, xlims = c(0, input$rightskew + 9 * sqrt(input$rightskew)))
+  },
+  cacheKeyExpr = {
+    list(input$rightskew)
+  })
+  
+  # Matrix of rgamma values
+  data2 <-
+    reactive(matrix(
+      rgamma(
+        n = input$rightpath * input$rightsize,
+        input$rightskew,
+        beta = 1
+      ),
+      nrow = input$rightsize,
+      ncol = input$rightpath
+    ))
+  
+  # Average of right skewed
+  output$plotright2 <- renderCachedPlot({
+    
+    # Define the true mean alpha*beta = 1
+    trueMean = input$rightskew
+    
+    # Make means plot
+    makeMeansPlot(input$rightpath, input$rightsize, matrixMeans(input$rightpath, input$rightsize, data2()), trueMean)
+  }, 
+  cacheKeyExpr = {
+    list(input$rightpath, input$rightsize, input$rightskew)
+  })
+  
+  # Sum of right skewed
+  output$plotright3 <- renderCachedPlot({
+    matrix <- data2()
+    # Store value of sum into matrix matrixSum
+    matrixSum <-
+      matrix(0,
+             nrow = input$rightsize,
+             ncol = input$rightpath)
+      for (j in 1:input$rightpath) {
+        for (i in 1:input$rightsize) {
+          matrixSum[i, j] = mean(matrix[1:i, j]) * i - i * input$rightskew
+      }
+    }
+    
+    # Define the true (sum - E(sum) = 0)
+    trueSum = 0
+    
+    # Plot sum in different paths
+    makeSumPlot(input$rightpath, input$rightsize, matrixSum, trueSum)
+    
+  }, cacheKeyExpr = {
+    list(input$rightpath, input$rightsize, input$rightskew)
+  })
+  
+  ###################################################################
+  ## Symmetric skewed
+  ####################################################################
+  
+  # Population of Symmetric skewed
+  output$plotsymmetric1 <- renderCachedPlot({
+    x <- seq(0, 1, length = input$symsize)
+    dens <-
+      dbeta(x,
+            shape1 = input$inverse,
+            shape2 = input$inverse)
+    data <- data.frame(x = x, y = dens)
+    
+    # Make density plot separated by case where the peakedness is exactly 1 (causes a "box" shape)
+      makeDensityPlot(data = data, xlims = c(-0.03, 1.03), path=input$inverse)
+    },
+  cacheKeyExpr = {
+    list(input$symsize, input$inverse)
+  })
+  
+  # Matrix of rbeta values
+  data3 <- reactive(matrix(
+    rbeta(
+      input$sympath * input$symsize,
+      shape1 = input$inverse,
+      shape2 = input$inverse
+    ),
+    nrow = input$symsize,
+    ncol = input$sympath
+  ))
+  
+  # Average of symmetric
+  output$plotsymmetric2 <- renderCachedPlot({
+    
+    # Define the true mean
+    trueMean = 1 / 2
+    
+    # Make means plot
+    makeMeansPlot(input$sympath, input$symsize, matrixMeans(input$sympath, input$symsize, data3()), trueMean)
+  },
+  cacheKeyExpr = {
+    list(input$sympath, input$symsize, input$inverse)
+  })
+  
+  # Sum of symmetric
+  output$plotsymmetric3 <- renderCachedPlot({
+    matrix <- data3()
+    # Store value of sum into matrix matrixSum
+    matrixSum = matrix(1 / 2, nrow = input$symsize, ncol = input$sympath)
+    for (j in 1:input$sympath) {
+      for (i in 1:input$symsize) {
+        matrixSum[i, j] = mean(matrix[1:i, j]) * i - 0.5 * i
+      }
+    }
+    
+    # Define the true mean
+    trueSum = 0
+    
+    # Plot sum in different paths
+    makeSumPlot(input$sympath, input$symsize, matrixSum, trueSum)
+    
+  },
+  cacheKeyExpr = {
+    list(input$symsize, input$sympath, input$inverse)
+  })
+  
+  ###################################################################
+  ## Bimodal
+  ####################################################################
+  # Population for bimodel
+  output$plotbiomodel1 <- renderCachedPlot({
+    # Define parameters for density plot
+    t <- 5 / (input$bisize * input$bipath)
+    y <- seq(0, 5, t)
+    z <- seq(5, 0,-t) 
+    leftdraw <- dgamma(z, 1.2, beta = 1)
+    rightdraw <- dgamma(y, 1.2, beta = 1)
+    data<-data.frame(x = seq(0, 5, t), y = input$prop * leftdraw + (1 - input$prop) * rightdraw)
+    
+    # Make the density plot
+    makeDensityPlot(data = data, xlims = c(0,5))
+  },
+  cacheKeyExpr = {
+    list(input$prop)
+  })
+  
+  # Create data for bimodel
+  data4 <-
+    reactive({
+      # Random vector of 0s and 1s to determine which distribution each element samples from
+      rand<-sample(x = c(0,1), 
+                   size = input$bisize*input$bipath, 
+                   replace = TRUE, 
+                   prob = c(input$prop, 1-input$prop))
+      
+      rights<-sum(rand) # Number of elements sampled from the right distribution (represented by 1)
+      lefts<-input$bisize*input$bipath-rights # Number of elements sampled from left distribution (represented by 0)
+      leftGammas<-rgamma(lefts, 1.25, beta = 1) # Samples left distribution
+      rightGammas<-5-rgamma(rights, 1.25, beta = 1) # Samples right distribution
+      
+      # Loop to assign values from gamma distributions to rand
+      rightIndex<-1 
+      leftIndex<-1
+      for(x in 1:length(rand)){
+        if(rand[x]==0){
+          rand[x]<-leftGammas[leftIndex]
+          leftIndex<-leftIndex+1
+        }
+        else{
+          rand[x]<-rightGammas[rightIndex]
+          rightIndex<-rightIndex+1
+        }
+      }
+      
+      # Turn vector rand into a matrix with proper dimensions
+      matrix(rand, nrow=input$bisize, ncol=input$bipath)
+  })
+  
+  #Average for bimodel
+  output$plotbiomodel2 <- renderCachedPlot({
+    
+    # Define the true mean
+    trueMean = mean(data4())
+    
+    # Plot average in different paths
+    makeMeansPlot(input$bipath, input$bisize, matrixMeans(input$bipath, input$bisize, data4()), trueMean)
+    
+  },
+  cacheKeyExpr = {
+    list(input$bipath, input$bisize, input$prop)
+  })
+  
+  # Sum for bimodel
+  output$plotbiomodel3 <- renderCachedPlot({
+    matrix = data4()
+    # Store value of sum into matrix matrixSum
+    matrixSum = matrix(0, nrow = input$bisize, ncol = input$bipath)
+    for (j in 1:input$bipath) {
+      for (i in 1:input$bisize) {
+        matrixSum[i, j] = mean(matrix[1:i, j]) * i -  mean(data4()) * i
+      }
+    }
+    
+    # Define the true sum
+    trueSum = 0
+    
+    # Plot sum in different paths
+    makeSumPlot(input$bipath, input$bisize, matrixSum, trueSum)
+    
+  },
+  cacheKeyExpr = {
+    list(input$bipath, input$bisize, input$prop)
+  })
+  
+  
+  ###################################################################
+  ## Accident Rate
+  ####################################################################
+  
+  # Population of Poisson
+  output$poissonpop <- renderCachedPlot({
+    data<- data.frame(x=rpois(10000, input$poissonmean))
+    data<-summarize(group_by(data, x), y=n())
+    data$y<-(input$poissonmean^data$x) * exp(-input$poissonmean)/factorial(data$x)
+    makeBarPlot(xlab= "Number of accidents", data= data)
+  },
+  cacheKeyExpr = {
+    list(input$poissonmean)
+  })
+  
+  # Matrix of rpois values
+  data5 <-
+    reactive(matrix(
+      rpois(input$poissonpath * input$poissonsize,
+            input$poissonmean),
+      nrow = input$poissonsize,
+      ncol = input$poissonpath
+    ))
+  
+  # Average for poisson
+  output$plotpoisson1 <- renderCachedPlot({
+    
+    # Define the true mean
+    trueMean = input$poissonmean
+    
+    # Plot average in different paths
+    makeMeansPlot(input$poissonpath, input$poissonsize, matrixMeans(input$poissonpath, input$poissonsize, data5()), trueMean)
+    
+  },
+  cacheKeyExpr = {
+    list(input$poissonmean, input$poissonpath, input$poissonsize)
+  })
+  
+  # Sum for accident rate
+  output$plotpoisson2 <- renderCachedPlot({
+    matrix <- data5()
+    # Store value of sum into matrix matrixSum
+    matrixSum <-
+      matrix(0,
+             nrow = input$poissonsize,
+             ncol = input$poissonpath)
+    for (j in 1:input$poissonpath) {
+      for (i in 1:input$poissonsize) {
+        matrixSum[i, j] = mean(matrix[1:i, j]) * i - input$poissonmean * i
+      }
+    }
+    
+    # Define the true sum
+    trueSum = 0
+    
+    # Make plot for sum
+    makeSumPlot(input$poissonpath, input$poissonsize, matrixSum, trueSum)
+    
+  },
+  cacheKeyExpr = {
+    list(input$poissonmean, input$poissonpath, input$poissonsize)
+  })
+  
+  ###################################################################
+  ## Astrugulas
+  ####################################################################
+  
+  # Die results
+  die <- reactive({
+    die <- c(rep(1, 1), rep(3, 4), rep(4, 4), rep(6, 1))
+  })
+  
+  # Population of Astragalus
+  output$pop <- renderPlot({
+    data<-data.frame(x=c(1,3,4,6), y=c(.1,.4,.4,.1))
+    makeBarPlot(xlab= "Number on roll of astragalus", data= data)
+  })
+  
+  # Matrix of sample values
+  drawAdie <-
+    reactive(matrix(
+      sample(die(), input$aspath * input$assize,
+             replace = TRUE),
+      nrow = input$assize,
+      ncol = input$aspath
+    ))
+  
+  # Average of Astrugluas
+  output$line2 <- renderCachedPlot({
+    
+    # Define the true mean
+    trueMean = 3.5
+    
+    # Plot for means
+    makeMeansPlot(input$aspath, input$assize, matrixMeans(input$aspath, input$assize, drawAdie()), trueMean)
+  },
+  cacheKeyExpr = {
+    list(input$aspath, input$assize)
+  })
+  
+  # Sum of Astrugluas
+  output$line1 <- renderCachedPlot ({
+    matrix = drawAdie()
+    matrixSum = matrix(0, nrow = input$assize, ncol = input$aspath)
+    for (j in 1:input$aspath) {
+      for (i in 1:input$assize) {
+        matrixSum[i, j] = mean(matrix[1:i, j]) * i - 3.5 * i
+      }
+    }
+    
+    # Define the true sum
+    trueSum = 0
+    
+    # Plot for sum
+    makeSumPlot(input$aspath, input$assize, matrixSum, trueSum)
+    
+  },
+  cacheKeyExpr = {
+    list(input$aspath, input$assize)
+  })
+  
+  ###################################################################
+  ## iPOD SHUFFLE
+  ####################################################################
+  
+  # Reactive expression to get the number of songs of the chosen type
+  nSongs<-reactive({
+    if(input$ptype=="Jazz"){
+      nSongs <- input$s1
+    }
+    else if(input$ptype=="Rock"){
+      nSongs <- input$s2
+    }
+    else if(input$ptype=="Country"){
+      nSongs <- input$s3
+    }
+    else{
+      nSongs <- input$s4
+    }
+  })
+  
+  # Set up songs from four types
+  songs <- reactive({
+    songs <- c(rep(input$s1),
+               rep(input$s2),
+               rep(input$s3),
+               rep(input$s4))
+  })
+  
+  # Jazz percent
+  output$Jazz_percent <- renderPrint({
+    cat(round(input$s1 / sum(songs()), digits = 2))
+  })
+  
+  # Rock percent
+  output$Rock_percent <- renderPrint({
+    cat(round(input$s2 / sum(songs()), digits = 2))
+  })
+  
+  # Country percent
+  output$Country_percent <- renderPrint({
+    cat(round(input$s3 / sum(songs()), digits = 2))
+  })
+  
+  # Hip-pop percent
+  output$Hiphop_percent <- renderPrint({
+    cat(round(input$s4 / sum(songs()), digits = 2))
+  })
+
+  # Bar plot
+  output$iPodBarPlot <- renderCachedPlot({
+    # Parameters for bar plot
+    p <- nSongs() / sum(songs())
+    data<-data.frame(x = c(input$ptype, "Other music"), y=c(p, 1-p))
+    data$x<-factor(data$x, levels=data$x) # Done to force sorted order for bars
+    
+    # Make bar plot
+    makeBarPlot(xlab= paste(input$ptype, "vs other music"), data= data)
+  }, 
+  cacheKeyExpr = {
+    list(input$s1, input$s2, input$s3, input$ptype, input$s4, input$ipodsize)
+  })
+  
+  # Data for the particular genre of focus in matrix form
+  genreData <-
+    reactive(matrix(
+      rbinom(
+        input$ipodpath * input$ipodsize,
+        size = 1,
+        prob = nSongs() / sum(songs())
+      ),
+      nrow = input$ipodsize,
+      ncol = input$ipodpath
+    ))
+  
+  
+  # Playlist Mean Plot
+  output$PlotMeaniPod <- renderCachedPlot({
+    
+    # Define the true mean
+    trueMean = nSongs() / sum(songs())
+    
+    # Plot average in different paths
+    makeMeansPlot(input$ipodpath, input$ipodsize, matrixMeans(input$ipodpath, input$ipodsize, genreData()), trueMean, "Proportion")
+    
+  },
+  cacheKeyExpr = {
+    list(
+      input$s1,
+      input$s2,
+      input$s3,
+      input$s4,
+      input$ptype,
+      input$ipodsize,
+      input$ipodpath
+    )
+  })
+  
+  #Plot playlist sum
+  output$PlotSumiPod <- renderCachedPlot({
+    
+    matrix<-genreData()
+    
+    # Store value of sum into matrix matrixSum
+    matrixSum <-
+      matrix(0, nrow = input$ipodsize, ncol = input$ipodpath)
+    for (j in 1:input$ipodpath) {
+      for (i in 1:input$ipodsize) {
+        matrixSum[i, j] = mean(matrix[1:i, j]) * i - i * (nSongs() / sum(songs()))
+      }
+    }
+    
+    # Define the true sum
+    trueSum = 0
+    
+    # Plot sum in different paths
+    makeSumPlot(input$ipodpath, input$ipodsize, matrixSum, trueSum)
+  },
+  cacheKeyExpr = {
+    list(input$s1, input$s2, input$s3, input$ptype, input$s4, input$ipodsize)
+  })
 })
