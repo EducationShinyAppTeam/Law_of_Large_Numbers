@@ -5,41 +5,41 @@ library(stats)
 library(Rlab)
 library(shinyWidgets)
 library(dplyr)
-#library(rlocker)
+library(rlocker)
 
 shinyServer(function(session, input, output) {
   #############rlocker initialized#########
   #Initialized learning  locker connection
-  #connection <- rlocker::connect(
-  #  session,
-  #  list(
-  #    base_url = "https://learning-locker.stat.vmhost.psu.edu/",
-  #    auth = "Basic ZDQ2OTNhZWZhN2Q0ODRhYTU4OTFmOTlhNWE1YzBkMjQxMjFmMGZiZjo4N2IwYzc3Mjc1MzU3MWZkMzc1ZDliY2YzOTNjMGZiNzcxOThiYWU2",
-  #    agent = rlocker::createAgent()
-  #  )
-  #)
-  
+  connection <- rlocker::connect(
+   session,
+   list(
+     base_url = "https://learning-locker.stat.vmhost.psu.edu/",
+     auth = "Basic ZDQ2OTNhZWZhN2Q0ODRhYTU4OTFmOTlhNWE1YzBkMjQxMjFmMGZiZjo4N2IwYzc3Mjc1MzU3MWZkMzc1ZDliY2YzOTNjMGZiNzcxOThiYWU2",
+     agent = rlocker::createAgent()
+   )
+  )
+
   # Setup demo app and user.
-  #currentUser <-
-  #  connection$agent
-  
-  #if (connection$status != 200) {
-  #  warning(paste(connection$status, "\nTry checking your auth token."))
-  #}
-  
-  #getCurrentAddress <- function(session) {
-  #  return(
-  #    paste0(
-  #      session$clientData$url_protocol,
-  #      "//",
-  #      session$clientData$url_hostname,
-  #      session$clientData$url_pathname,
-  #      ":",
-  #      session$clientData$url_port,
-  #      session$clientData$url_search
-  #    )
-  #  )
-  #}
+  currentUser <-
+   connection$agent
+
+  if (connection$status != 200) {
+   warning(paste(connection$status, "\nTry checking your auth token."))
+  }
+
+  getCurrentAddress <- function(session) {
+   return(
+     paste0(
+       session$clientData$url_protocol,
+       "//",
+       session$clientData$url_hostname,
+       session$clientData$url_pathname,
+       ":",
+       session$clientData$url_port,
+       session$clientData$url_search
+     )
+   )
+  }
   
   # Info Button in upper corner
   observeEvent(input$info, {
@@ -56,7 +56,7 @@ shinyServer(function(session, input, output) {
   
   #Go Button
   observeEvent(input$go, {
-    updateTabItems(session, "tabs", "largeNumber")
+    updateTabItems(session, "tabs", "Prerequisites")
   })
   
   # define color in different paths
@@ -87,9 +87,8 @@ shinyServer(function(session, input, output) {
       
       # Create plot
       plot<-ggplot2::ggplot(aes_string(x='x'), data= data) +
-        geom_hline(aes(yintercept=trueSum, linetype="True sum"), show.legend=T, size=1) +
-        scale_linetype_manual(name = "", values = c("dotted"), 
-                              guide = guide_legend(override.aes = list(color = c("black"))))+
+        geom_hline(aes(yintercept=trueSum, linetype="True sum"), show.legend=F, size=1) +
+        scale_linetype_manual(name = "", values = c("dotted"))+
         ylim(c(
           min(matrixSum, trueSum)-.01,
           max(matrixSum, trueSum)+.01
@@ -165,9 +164,11 @@ shinyServer(function(session, input, output) {
       )
     # For case in symmetric where path is 1 causing "box" shape
     if(path ==1){
+      print("Here Top")
       plot<-plot+
         geom_segment(aes(x=0, y=0, xend=0, yend=1), color="#0072B2", size=1.5)+
         geom_segment(aes(x=1, y=0, xend=1, yend=1), color="#0072B2", size=1.5)
+      print("Here")
     }
     plot
   }
@@ -175,8 +176,8 @@ shinyServer(function(session, input, output) {
   # Function to create bar plots for each group
   # Inputs: x axis label (string), dataframe consisting of either column x or columns x and y to define axes
   # Output: ggplot of resulting bar plot
-  makeBarPlot<-function(xlab, data){
-      plot<-ggplot(aes(x=x, y=y), data= data) + 
+  makeBarPlot<-function(xlab, data, levels=as.character(data$x)){
+      plot<-ggplot(aes(x=factor(x, levels=levels), y=y), data= data) + 
         geom_bar(stat = "identity", fill="#0072B2") +
         ylim(c(0, max(data$y)+.1*max(data$y)))+
         xlab(xlab) + 
@@ -185,7 +186,8 @@ shinyServer(function(session, input, output) {
         theme(axis.text = element_text(size=18),
               plot.title = element_text(size=18, face="bold"),
               axis.title = element_text(size=18),
-              panel.background = element_rect(fill = "white", color="black"))
+              panel.background = element_rect(fill = "white", color="black"))+
+        scale_x_discrete(drop=FALSE)
     
     plot
   }
@@ -193,16 +195,17 @@ shinyServer(function(session, input, output) {
   ###################################################################
   ## Left skewed
   ####################################################################
+  leftSkew<-reactive({11-10*input$leftskew})
   
   # Population of left skewed
   output$plotleft1 <- renderCachedPlot({
     # Define parameters for density plot
-    x <- seq(input$leftskew - 9 * sqrt(input$leftskew),0, length = input$symsize)  
-    y <- dgamma(-x, shape = input$leftskew, beta = 1)
+    x <- seq((leftSkew()) - 9 * sqrt((leftSkew())),0, length = input$symsize)  
+    y <- dgamma(-x, shape = (leftSkew()), beta = 1)
     data<-data.frame(x=x, y=y)
     
     # Make Density Plot
-    makeDensityPlot(data=data, xlims = c(input$leftskew - 9 * sqrt(input$leftskew), 0))
+    makeDensityPlot(data=data, xlims = c((leftSkew()) - 9 * sqrt((leftSkew())), 0))
   },
   cacheKeyExpr = {
     list(input$leftskew)
@@ -213,7 +216,7 @@ shinyServer(function(session, input, output) {
     reactive(matrix(
       -rgamma(
         n = input$leftpath * input$leftsize,
-        input$leftskew,
+        (leftSkew()),
         beta = 1
       ),
       nrow = input$leftsize,
@@ -224,7 +227,7 @@ shinyServer(function(session, input, output) {
     output$plotleft2 <- renderCachedPlot({
     
     # Define the true mean alpha*beta = 1
-    trueMean = -input$leftskew
+    trueMean = -(leftSkew())
     
     # Plot average in different paths
     makeMeansPlot(input$leftpath, input$leftsize, matrixMeans(input$leftpath, input$leftsize, data1()), trueMean)
@@ -243,7 +246,7 @@ shinyServer(function(session, input, output) {
       matrix(0, nrow = input$leftsize, ncol = input$leftpath)
     for (j in 1:input$leftpath) {
       for (i in input$leftsize:1) {
-        matrixSum[i, j] = mean(matrix[1:i, j]) * i + i * input$leftskew
+        matrixSum[i, j] = mean(matrix[1:i, j]) * i + i * (leftSkew())
       }
     }
     
@@ -262,16 +265,16 @@ shinyServer(function(session, input, output) {
   ###################################################################
   ## Right skewed
   ####################################################################
-  
+  rightSkew<-reactive({11-10*input$rightskew})
   # Population of right skewed
   output$plotright1 <- renderCachedPlot({
     # Define parameters for density plot
-    x <- seq(0, input$rightskew + 9 * sqrt(input$rightskew), length = input$symsize)  
-    y <- dgamma(x, shape = input$rightskew, beta = 1)
+    x <- seq(0, (rightSkew()) + 9 * sqrt(rightSkew()), length = input$symsize)  
+    y <- dgamma(x, shape = (rightSkew()), beta = 1)
     data<-data.frame(x=x, y=y)
     
     # Make the density plot
-    makeDensityPlot(data=data, xlims = c(0, input$rightskew + 9 * sqrt(input$rightskew)))
+    makeDensityPlot(data=data, xlims = c(0, (rightSkew()) + 9 * sqrt((rightSkew()))))
   },
   cacheKeyExpr = {
     list(input$rightskew)
@@ -282,7 +285,7 @@ shinyServer(function(session, input, output) {
     reactive(matrix(
       rgamma(
         n = input$rightpath * input$rightsize,
-        input$rightskew,
+        (rightSkew()),
         beta = 1
       ),
       nrow = input$rightsize,
@@ -293,7 +296,7 @@ shinyServer(function(session, input, output) {
   output$plotright2 <- renderCachedPlot({
     
     # Define the true mean alpha*beta = 1
-    trueMean = input$rightskew
+    trueMean = (rightSkew())
     
     # Make means plot
     makeMeansPlot(input$rightpath, input$rightsize, matrixMeans(input$rightpath, input$rightsize, data2()), trueMean)
@@ -312,7 +315,7 @@ shinyServer(function(session, input, output) {
              ncol = input$rightpath)
       for (j in 1:input$rightpath) {
         for (i in 1:input$rightsize) {
-          matrixSum[i, j] = mean(matrix[1:i, j]) * i - i * input$rightskew
+          matrixSum[i, j] = mean(matrix[1:i, j]) * i - i * (rightSkew())
       }
     }
     
@@ -329,18 +332,18 @@ shinyServer(function(session, input, output) {
   ###################################################################
   ## Symmetric skewed
   ####################################################################
-  
+  inverse<-reactive({round(14.6*input$inverse^3-5.7*input$inverse^2 + input$inverse+.1,3)})
   # Population of Symmetric skewed
   output$plotsymmetric1 <- renderCachedPlot({
     x <- seq(0, 1, length = input$symsize)
     dens <-
       dbeta(x,
-            shape1 = input$inverse,
-            shape2 = input$inverse)
+            shape1 = inverse(),
+            shape2 = inverse())
     data <- data.frame(x = x, y = dens)
     
     # Make density plot separated by case where the peakedness is exactly 1 (causes a "box" shape)
-      makeDensityPlot(data = data, xlims = c(-0.03, 1.03), path=input$inverse)
+      makeDensityPlot(data = data, xlims = c(-0.03, 1.03), path=inverse())
     },
   cacheKeyExpr = {
     list(input$symsize, input$inverse)
@@ -350,8 +353,8 @@ shinyServer(function(session, input, output) {
   data3 <- reactive(matrix(
     rbeta(
       input$sympath * input$symsize,
-      shape1 = input$inverse,
-      shape2 = input$inverse
+      shape1 = inverse(),
+      shape2 = inverse()
     ),
     nrow = input$symsize,
     ncol = input$sympath
@@ -396,6 +399,7 @@ shinyServer(function(session, input, output) {
   ## Bimodal
   ####################################################################
   # Population for bimodel
+  prop<-reactive({input$prop/100})
   output$plotbiomodel1 <- renderCachedPlot({
     # Define parameters for density plot
     t <- 5 / (input$bisize * input$bipath)
@@ -403,7 +407,7 @@ shinyServer(function(session, input, output) {
     z <- seq(5, 0,-t) 
     leftdraw <- dgamma(z, 1.2, beta = 1)
     rightdraw <- dgamma(y, 1.2, beta = 1)
-    data<-data.frame(x = seq(0, 5, t), y = input$prop * leftdraw + (1 - input$prop) * rightdraw)
+    data<-data.frame(x = seq(0, 5, t), y = prop() * leftdraw + (1 - prop()) * rightdraw)
     
     # Make the density plot
     makeDensityPlot(data = data, xlims = c(0,5))
@@ -419,7 +423,7 @@ shinyServer(function(session, input, output) {
       rand<-sample(x = c(0,1), 
                    size = input$bisize*input$bipath, 
                    replace = TRUE, 
-                   prob = c(input$prop, 1-input$prop))
+                   prob = c(prop(), 1-prop()))
       
       rights<-sum(rand) # Number of elements sampled from the right distribution (represented by 1)
       lefts<-input$bisize*input$bipath-rights # Number of elements sampled from left distribution (represented by 0)
@@ -487,9 +491,9 @@ shinyServer(function(session, input, output) {
   
   # Population of Poisson
   output$poissonpop <- renderCachedPlot({
-    data<- data.frame(x=rpois(10000, input$poissonmean))
-    data<-summarize(group_by(data, x), y=n())
-    data$y<-(input$poissonmean^data$x) * exp(-input$poissonmean)/factorial(data$x)
+    data<-data.frame(x=0:ceiling(2*input$poissonmean+5)) # More x's than necessary
+    data$y<-(input$poissonmean^data$x) * exp(-input$poissonmean)/factorial(data$x) # Get y vals for x's
+    data<-rbind(data[1:2,], filter(data[-c(1,2), ], y>.0005)) # Filter based on probability
     makeBarPlot(xlab= "Number of accidents", data= data)
   },
   cacheKeyExpr = {
@@ -556,7 +560,7 @@ shinyServer(function(session, input, output) {
   # Population of Astragalus
   output$pop <- renderPlot({
     data<-data.frame(x=c(1,3,4,6), y=c(.1,.4,.4,.1))
-    makeBarPlot(xlab= "Number on roll of astragalus", data= data)
+    makeBarPlot(xlab= "Number on roll of astragalus", data= data, levels=1:6)
   })
   
   # Matrix of sample values
@@ -654,11 +658,11 @@ shinyServer(function(session, input, output) {
   output$iPodBarPlot <- renderCachedPlot({
     # Parameters for bar plot
     p <- nSongs() / sum(songs())
-    data<-data.frame(x = c(input$ptype, "Other music"), y=c(p, 1-p))
+    data<-data.frame(x = c("Other music (0)", paste(input$ptype,"(1)")), y=c(1-p, p))
     data$x<-factor(data$x, levels=data$x) # Done to force sorted order for bars
     
     # Make bar plot
-    makeBarPlot(xlab= paste(input$ptype, "vs other music"), data= data)
+    makeBarPlot(xlab= "Genre", data= data)
   }, 
   cacheKeyExpr = {
     list(input$s1, input$s2, input$s3, input$ptype, input$s4, input$ipodsize)
