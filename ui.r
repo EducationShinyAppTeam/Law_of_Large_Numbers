@@ -10,9 +10,6 @@ shinyUI(dashboardPage(
     titleWidth=250,
     tags$li(class = "dropdown", actionLink("info", icon("info"))),
     tags$li(class = "dropdown",
-            tags$a(href='https://github.com/EducationShinyAppTeam/BOAST',
-                   icon("github"))),
-    tags$li(class = "dropdown",
             tags$a(href='https://shinyapps.science.psu.edu/',
                    icon("home")))
   ),
@@ -73,8 +70,12 @@ shinyUI(dashboardPage(
           )),
           
           div(style = "text-align: center",
-              bsButton("go", "Go!", icon("bolt"), class =
-                         "circle grow")),
+              bsButton(
+                inputId = "go",
+                label = "GO!",
+                size = "large",
+                icon = icon("bolt")
+              )),
           br(),
           h2("Acknowledgements:"),
           
@@ -83,7 +84,7 @@ shinyUI(dashboardPage(
           and by Leah Hunt in June 2020. 
           Special thanks to Jingling Feng and team member Qichao Chen for help in the development of the app."),
           
-          div(class = "updated", "Last Update: 06/18/2020 by LMH.")
+          div(class = "updated", "Last Update: 06/24/2020 by LMH.")
         )
       ),
       
@@ -107,14 +108,20 @@ shinyUI(dashboardPage(
         ),
         HTML('<center><figure><img src="astragalus.jpg" alt="Picture of an astragalus" width="600"><figcaption>image by Yaan, 2007</figcaption></figure></center>'),
         tags$ul(
-          tags$li("The app allows the user to select the number of paths to plot. The number of paths refers to the number of repetitions of
-                  the experiment that will be done.")
+          tags$li("The app allows the user to select the number of paths to plot. The number of paths refers to the number of repetitions of the entire process of taking n samples that will be done.")
           
         ),
         tags$ul(
           tags$li("The sample size refers to the number of times you will repeat the chance process in each path.")
           
-        )
+        ),
+        div(style = "text-align: center",
+            bsButton(
+              inputId = "gop",
+              label = "GO!",
+              size = "large",
+              icon = icon("bolt")
+            )),
       ),      
       
       # Explore Law of Large Numbers Tab

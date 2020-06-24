@@ -5,7 +5,7 @@ library(stats)
 library(Rlab)
 library(shinyWidgets)
 library(dplyr)
-library(rlocker)
+#library(rlocker)
 
 shinyServer(function(session, input, output) {
   #############rlocker initialized#########
@@ -18,27 +18,27 @@ shinyServer(function(session, input, output) {
      agent = rlocker::createAgent()
    )
   )
-
+  
   # Setup demo app and user.
   currentUser <-
-   connection$agent
+    connection$agent
 
   if (connection$status != 200) {
-   warning(paste(connection$status, "\nTry checking your auth token."))
+    warning(paste(connection$status, "\nTry checking your auth token."))
   }
 
   getCurrentAddress <- function(session) {
-   return(
-     paste0(
-       session$clientData$url_protocol,
-       "//",
-       session$clientData$url_hostname,
-       session$clientData$url_pathname,
-       ":",
-       session$clientData$url_port,
-       session$clientData$url_search
-     )
-   )
+    return(
+      paste0(
+        session$clientData$url_protocol,
+        "//",
+        session$clientData$url_hostname,
+        session$clientData$url_pathname,
+        ":",
+        session$clientData$url_port,
+        session$clientData$url_search
+      )
+    )
   }
   
   # Info Button in upper corner
@@ -56,7 +56,12 @@ shinyServer(function(session, input, output) {
   
   #Go Button
   observeEvent(input$go, {
-    updateTabItems(session, "tabs", "Prerequisites")
+    updateTabItems(session, "tabs", "largeNumber")
+  })
+  
+  #Go Button
+  observeEvent(input$gop, {
+    updateTabItems(session, "tabs", "largeNumber")
   })
   
   # define color in different paths
@@ -423,7 +428,7 @@ shinyServer(function(session, input, output) {
       rand<-sample(x = c(0,1), 
                    size = input$bisize*input$bipath, 
                    replace = TRUE, 
-                   prob = c(prop(), 1-prop()))
+                   prob = c(1-prop(), prop())) 
       
       rights<-sum(rand) # Number of elements sampled from the right distribution (represented by 1)
       lefts<-input$bisize*input$bipath-rights # Number of elements sampled from left distribution (represented by 0)
