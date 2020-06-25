@@ -169,11 +169,9 @@ shinyServer(function(session, input, output) {
       )
     # For case in symmetric where path is 1 causing "box" shape
     if(path ==1){
-      print("Here Top")
       plot<-plot+
         geom_segment(aes(x=0, y=0, xend=0, yend=1), color="#0072B2", size=1.5)+
         geom_segment(aes(x=1, y=0, xend=1, yend=1), color="#0072B2", size=1.5)
-      print("Here")
     }
     plot
   }
@@ -407,12 +405,12 @@ shinyServer(function(session, input, output) {
   prop<-reactive({input$prop/100})
   output$plotbiomodel1 <- renderCachedPlot({
     # Define parameters for density plot
-    t <- 5 / (input$bisize * input$bipath)
-    y <- seq(0, 5, t)
-    z <- seq(5, 0,-t) 
-    leftdraw <- dgamma(z, 1.2, beta = 1)
-    rightdraw <- dgamma(y, 1.2, beta = 1)
-    data<-data.frame(x = seq(0, 5, t), y = prop() * leftdraw + (1 - prop()) * rightdraw)
+    t <- 1 / (input$bisize * input$bipath)
+    y <- seq(0, 1, t)
+    z <- seq(1, 0,-t) 
+    leftdraw <- dbeta(z, 4,14)*.2
+    rightdraw <- dbeta(y, 4,14) *.2
+    data<-data.frame(x = seq(0, 5, t*5), y = prop() * leftdraw + (1 - prop()) * rightdraw)
     
     # Make the density plot
     makeDensityPlot(data = data, xlims = c(0,5))
@@ -432,8 +430,10 @@ shinyServer(function(session, input, output) {
       
       rights<-sum(rand) # Number of elements sampled from the right distribution (represented by 1)
       lefts<-input$bisize*input$bipath-rights # Number of elements sampled from left distribution (represented by 0)
-      leftGammas<-rgamma(lefts, 1.25, beta = 1) # Samples left distribution
-      rightGammas<-5-rgamma(rights, 1.25, beta = 1) # Samples right distribution
+      leftGammas<-rbeta(lefts, 4, 14)*5
+        
+        #rgamma(lefts, 1.25, beta = 1) # Samples left distribution
+      rightGammas<-5-rbeta(rights, 4, 14)*5  # Samples right distribution
       
       # Loop to assign values from gamma distributions to rand
       rightIndex<-1 
