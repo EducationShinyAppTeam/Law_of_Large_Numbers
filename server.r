@@ -5,42 +5,10 @@ library(stats)
 library(Rlab)
 library(shinyWidgets)
 library(dplyr)
-#library(rlocker)
+library(boastUtils)
 
 shinyServer(function(session, input, output) {
-  #############rlocker initialized#########
-  #Initialized learning  locker connection
-  connection <- rlocker::connect(
-   session,
-   list(
-     base_url = "https://learning-locker.stat.vmhost.psu.edu/",
-     auth = "Basic ZDQ2OTNhZWZhN2Q0ODRhYTU4OTFmOTlhNWE1YzBkMjQxMjFmMGZiZjo4N2IwYzc3Mjc1MzU3MWZkMzc1ZDliY2YzOTNjMGZiNzcxOThiYWU2",
-     agent = rlocker::createAgent()
-   )
-  )
-  
-  # Setup demo app and user.
-  currentUser <-
-    connection$agent
 
-  if (connection$status != 200) {
-    warning(paste(connection$status, "\nTry checking your auth token."))
-  }
-
-  getCurrentAddress <- function(session) {
-    return(
-      paste0(
-        session$clientData$url_protocol,
-        "//",
-        session$clientData$url_hostname,
-        session$clientData$url_pathname,
-        ":",
-        session$clientData$url_port,
-        session$clientData$url_search
-      )
-    )
-  }
-  
   # Info Button in upper corner
   observeEvent(input$info, {
     sendSweetAlert(
@@ -48,8 +16,9 @@ shinyServer(function(session, input, output) {
       title = "Instructions:",
       type = NULL,
       closeOnClickOutside = TRUE,
-      text = "Population Graph is used to present the overall
-              Pick a population type and see how sample averages converge which sample sums diverge from their expected value."
+      text = "Use the controls to choose a population from which to sample.
+              Then observe the means and sums plots to see if they converge
+              or diverge."
     )
   })
   
@@ -111,7 +80,10 @@ shinyServer(function(session, input, output) {
       
       # Add paths
       for(i in 1:path){
-        plot<-plot + geom_path(aes_string(x='x', y=allNames[i]), data=data, color=colors[i], size=1.5)
+        plot <- plot + geom_path(aes_string(x = 'x', y = allNames[i]), 
+                                 data = data, 
+                                 color = colors[i], 
+                                 size = 1.5)
       }
       plot
   }
@@ -130,14 +102,14 @@ shinyServer(function(session, input, output) {
     plot<-ggplot2::ggplot(aes_string(x='x'), data= data) +
       geom_hline(aes(yintercept=trueMean, linetype="True mean"), show.legend=T, size=1) +
       scale_linetype_manual(name = "", values = c("dotted"), 
-                            guide = guide_legend(override.aes = list(color = c("black"))))+
+                            guide = guide_legend(override.aes = list(color = c("black")))) +
       ylim(c(
         min(matrixMeans, trueMean)-.01,
         max(matrixMeans, trueMean)+.01
-      ))+
+      )) +
       xlab("Number of trials so far") + 
       ylab(label) +
-      ggtitle("Arithmetic Mean")+
+      ggtitle("Arithmetic Mean") +
       theme(axis.text = element_text(size=18),
             plot.title = element_text(size=18, face="bold"),
             axis.title = element_text(size=18),
@@ -170,7 +142,7 @@ shinyServer(function(session, input, output) {
     # For case in symmetric where path is 1 causing "box" shape
     if(path ==1){
       plot<-plot+
-        geom_segment(aes(x=0, y=0, xend=0, yend=1), color="#0072B2", size=1.5)+
+        geom_segment(aes(x=0, y=0, xend=0, yend=1), color="#0072B2", size=1.5) +
         geom_segment(aes(x=1, y=0, xend=1, yend=1), color="#0072B2", size=1.5)
     }
     plot
@@ -182,14 +154,14 @@ shinyServer(function(session, input, output) {
   makeBarPlot<-function(xlab, data, levels=as.character(data$x)){
       plot<-ggplot(aes(x=factor(x, levels=levels), y=y), data= data) + 
         geom_bar(stat = "identity", fill="#0072B2") +
-        ylim(c(0, max(data$y)+.1*max(data$y)))+
+        ylim(c(0, max(data$y)+.1*max(data$y))) +
         xlab(xlab) + 
         ylab("Probability") +
-        ggtitle("Population Graph")+
+        ggtitle("Population Graph") +
         theme(axis.text = element_text(size=18),
               plot.title = element_text(size=18, face="bold"),
               axis.title = element_text(size=18),
-              panel.background = element_rect(fill = "white", color="black"))+
+              panel.background = element_rect(fill = "white", color="black")) +
         scale_x_discrete(drop=FALSE)
     
     plot
@@ -233,7 +205,10 @@ shinyServer(function(session, input, output) {
     trueMean = -(leftSkew())
     
     # Plot average in different paths
-    makeMeansPlot(input$leftpath, input$leftsize, matrixMeans(input$leftpath, input$leftsize, data1()), trueMean)
+    makeMeansPlot(input$leftpath, 
+                  input$leftsize, 
+                  matrixMeans(input$leftpath, input$leftsize, data1()), 
+                  trueMean)
     
   },
   cacheKeyExpr = {
@@ -302,7 +277,11 @@ shinyServer(function(session, input, output) {
     trueMean = (rightSkew())
     
     # Make means plot
-    makeMeansPlot(input$rightpath, input$rightsize, matrixMeans(input$rightpath, input$rightsize, data2()), trueMean)
+    print(data2())
+    makeMeansPlot(input$rightpath, 
+                  input$rightsize, 
+                  matrixMeans(input$rightpath, input$rightsize, data2()), 
+                  trueMean)
   }, 
   cacheKeyExpr = {
     list(input$rightpath, input$rightsize, input$rightskew)
@@ -370,7 +349,10 @@ shinyServer(function(session, input, output) {
     trueMean = 1 / 2
     
     # Make means plot
-    makeMeansPlot(input$sympath, input$symsize, matrixMeans(input$sympath, input$symsize, data3()), trueMean)
+    makeMeansPlot(input$sympath, 
+                  input$symsize, 
+                  matrixMeans(input$sympath, input$symsize, data3()), 
+                  trueMean)
   },
   cacheKeyExpr = {
     list(input$sympath, input$symsize, input$inverse)
@@ -460,7 +442,10 @@ shinyServer(function(session, input, output) {
     trueMean = mean(data4())
     
     # Plot average in different paths
-    makeMeansPlot(input$bipath, input$bisize, matrixMeans(input$bipath, input$bisize, data4()), trueMean)
+    makeMeansPlot(input$bipath, 
+                  input$bisize, 
+                  matrixMeans(input$bipath, input$bisize, data4()), 
+                  trueMean)
     
   },
   cacheKeyExpr = {
@@ -521,7 +506,10 @@ shinyServer(function(session, input, output) {
     trueMean = input$poissonmean
     
     # Plot average in different paths
-    makeMeansPlot(input$poissonpath, input$poissonsize, matrixMeans(input$poissonpath, input$poissonsize, data5()), trueMean)
+    makeMeansPlot(input$poissonpath, 
+                  input$poissonsize, 
+                  matrixMeans(input$poissonpath, input$poissonsize, data5()), 
+                  trueMean)
     
   },
   cacheKeyExpr = {
@@ -584,7 +572,10 @@ shinyServer(function(session, input, output) {
     trueMean = 3.5
     
     # Plot for means
-    makeMeansPlot(input$aspath, input$assize, matrixMeans(input$aspath, input$assize, drawAdie()), trueMean)
+    makeMeansPlot(input$aspath, 
+                  input$assize, 
+                  matrixMeans(input$aspath, input$assize, drawAdie()), 
+                  trueMean)
   },
   cacheKeyExpr = {
     list(input$aspath, input$assize)
@@ -693,7 +684,11 @@ shinyServer(function(session, input, output) {
     trueMean = nSongs() / sum(songs())
     
     # Plot average in different paths
-    makeMeansPlot(input$ipodpath, input$ipodsize, matrixMeans(input$ipodpath, input$ipodsize, genreData()), trueMean, "Proportion")
+    makeMeansPlot(input$ipodpath, 
+                  input$ipodsize, 
+                  matrixMeans(input$ipodpath, input$ipodsize, genreData()), 
+                  trueMean, 
+                  "Proportion")
     
   },
   cacheKeyExpr = {

@@ -1,6 +1,7 @@
 library(shiny)
 library(shinydashboard)
 library(shinyBS)
+library(boastUtils)
 
 # Define UI 
 shinyUI(dashboardPage(
@@ -30,7 +31,8 @@ shinyUI(dashboardPage(
   ),
   dashboardBody(
     tags$head(
-      tags$link(rel = "stylesheet", type = "text/css", href = "https://educationshinyappteam.github.io/Style_Guide/theme/boast.css")
+      tags$link(rel = "stylesheet", type = "text/css", 
+                href = "https://educationshinyappteam.github.io/Style_Guide/theme/boast.css")
     ),
     
     # Overview Tab
@@ -41,19 +43,22 @@ shinyUI(dashboardPage(
           h1("Law of Large Numbers"),
           
             p("This app is designed to examine the Law of Large Numbers for means and proportions.
-                                 The Law of Large Numbers tells us that averages or proportions are likely
-                                 to be more stable when there are more trials while sums or counts are likely to be more variable.
-                                 This does not happen by compensation for a bad run of luck since independent trials have no memory.")
+               The Law of Large Numbers tells us that the [arithmetic] mean and proportions become 
+              more stable (less variable) than a sum or counts when there are more trials. This 
+              stability is not the result of some self-correcting behavior as independent trials 
+              have no memory of what happened before nor do they know what will happen in the future.")
           ,
           
-            p("This app lets students see the Law of Large Numbers in action for different sample sizes from different populations.")
+            p("This app lets you explore the Law of Large Numbers in action for different sample sizes from 
+              different populations.")
           ,
           br(),
           h2("Instructions"),
           tags$ol(
             tags$li(
-              "Pick a population from one of the continuous types (left-skewed; right-skewed; symmetric; or bimodal) or one of the discrete examples (rolls of an astragalus/bone die; songs shuffled from a playlist;
-                                 or accident occurrence)."
+              "Pick a population from one of the continuous types (left-skewed; right-skewed; symmetric; or bimodal) 
+              or one of the discrete examples (rolls of an astragalus/bone die; songs shuffled from a playlist;
+              or accident occurrence)."
             
           ),
         
@@ -101,14 +106,16 @@ shinyUI(dashboardPage(
           While in depth understanding of these distributions is not required, you may wish to review this ",
                   tags$a(href="https://online.stat.psu.edu/stat100/lesson/3/3.2#graphshapes", "Stat 100 Table of Graph Shapes"),
                   ".",),
-          tags$li("One of the distributions is based upon rolls of an astragalus. The astragalus (ankle or heel bone) of animals were used in ancient times as a forerunner of modern dice. 
-                  When a sheep astragalus is thrown into the air it can land on one of four sides, which were associated with the numbers 
-                  1, 3, 4, and 6. Two sides (the 3 and the 4) are wider and each come up about 40% of the time, while the narrower sides 
-                  (the 1 and the 6) each come up about 10% of the time. An image of an astralagus is shown below.")
+          tags$li("One of the distributions is based upon rolls of an astragalus. Astragali (ankle or heel bone) of animals were used
+                  in ancient times as a forerunner of modern dice. When a sheep astragalus is thrown into the air it can land on one of four 
+                  sides, which were associated with the numbers 1, 3, 4, and 6. Two sides (the 3 and the 4) are wider and each come up about 
+                  40% of the time, while the narrower sides (the 1 and the 6) each come up about 10% of the time. The following image provides 
+                  four different views of an astragalus.")
         ),
-        HTML('<center><figure><img src="astragalus.jpg" alt="Picture of an astragalus" width="600"><figcaption>image by Yaan, 2007</figcaption></figure></center>'),
+        HTML('<center><figure><img src="astragalus.jpg" alt="Picture of an astragalus" width="600"><figcaption>Image by Yaan, 2007</figcaption></figure></center>'),
         tags$ul(
-          tags$li("The app allows the user to select the number of paths to plot. The number of paths refers to the number of repetitions of the entire process of taking n samples that will be done.")
+          tags$li("The app allows you to select the number of paths to plot. The number of paths refers to the number of repetitions of the entire 
+                  process of taking n samples that will be done.")
           
         ),
         tags$ul(
@@ -121,16 +128,12 @@ shinyUI(dashboardPage(
               label = "GO!",
               size = "large",
               icon = icon("bolt")
-            )),
-      ),      
+            ))),      
       
       # Explore Law of Large Numbers Tab
       tabItem(
         tabName = "largeNumber",
         
-        tags$head(tags$style(
-          HTML("input[type=\"number\"] {width: 60px;}")
-        )),
         h2("Law of Large Numbers"),
         p("In this section, you will have the chance to explore the law of large numbers. 
           To do so, first choose a population to sample from, a number of samples to take, 
@@ -175,11 +178,6 @@ shinyUI(dashboardPage(
                   step = 0.1,
                   ticks=FALSE
                 ),
-                # fluidRow(
-                #   column(width=8,"min"),
-                #   #column(width=9, ""),
-                #   column(width=2,"max")
-                # )
                 div(style = "position: absolute; left: 0.5em; top: 9em", "min"),
                 div(style = "position: absolute; right: 0.5em; top: 9em", "max"),
               )
@@ -199,11 +197,6 @@ shinyUI(dashboardPage(
                 ),
                 div(style = "position: absolute; left: 0.5em; top: 9em", "min"),
                 div(style = "position: absolute; right: 0.5em; top: 9em", "max"),
-                # fluidRow(
-                #   column(width=8,"min"),
-                #   #column(width=9, ""),
-                #   column(width=2,"max")
-                # )
               ),
               
               #Symmetric
@@ -222,11 +215,6 @@ shinyUI(dashboardPage(
                 div(style = "position: absolute; left: 0.5em; top: 10em", "Shaped"),
                 div(style = "position: absolute; right: 0.5em; top: 9em", "Bell"),
                 div(style = "position: absolute; right: 0.5em; top: 10em", "Shaped"),
-                # fluidRow(
-                #   column(width=2,"U-Shaped"),
-                #   column(width=6, ""),
-                #   column(width=2,"Bell-Shaped")
-                # )
               ),
               
               # Bimodal
@@ -241,8 +229,6 @@ shinyUI(dashboardPage(
                   value = 50,
                   ticks=F,
                   post="%",
-                  #grid_num=9
-                  #interval = 1
                 )
               ),
               
@@ -260,7 +246,8 @@ shinyUI(dashboardPage(
                 ),
                 conditionalPanel(
                   condition="input.poissonmean==0",
-                  "Note: When the mean is set to 0, the number of accidents is always 0, so the variance is 0."
+                  "Note: When the mean is set to 0, the number of accidents is always 0, 
+                  so the variance is 0."
                 )
               ),
               
@@ -272,9 +259,6 @@ shinyUI(dashboardPage(
                   offset = 0,
                   
                   p("Number of songs:"),
-                  column(
-                    4,
-                    offset = 0,
                     
                     # Inputs for the probabilites of each music type
                     numericInput(
@@ -283,7 +267,8 @@ shinyUI(dashboardPage(
                       1,
                       min = 0,
                       max = 200,
-                      step = 1
+                      step = 1,
+                      width="75px"
                     ),
                     numericInput(
                       "s2",
@@ -291,7 +276,8 @@ shinyUI(dashboardPage(
                       1,
                       min = 0,
                       max = 200,
-                      step = 1
+                      step = 1,
+                      width="75px"
                     ),
                     numericInput(
                       "s3",
@@ -299,7 +285,8 @@ shinyUI(dashboardPage(
                       1,
                       min = 0,
                       max = 200,
-                      step = 1
+                      step = 1,
+                      width="75px"
                     ),
                     numericInput(
                       "s4",
@@ -307,8 +294,8 @@ shinyUI(dashboardPage(
                       1,
                       min = 0,
                       max = 200,
-                      step = 1
-                    )
+                      step = 1,
+                      width="75px"
                   )
                 ),
 
@@ -554,65 +541,66 @@ shinyUI(dashboardPage(
         h2("References"),
         p(
           class = "hangingindent",
-          "Bailey, E. (2015). shinyBS: Twitter bootstrap components for shiny.
-            (v0.61). [R package]. Available from
-            https://CRAN.R-project.org/package=shinyBS"
+          "Bailey, E. (2015), shinyBS: Twitter bootstrap components for shiny, R package. Available
+            from https://CRAN.R-project.org/package=shinyBS"
         ),
         p(
           class = "hangingindent",
-          "Carey, R. (2019). boastUtils: BOAST Utilities. (v0.1.0).
-            [R Package]. Available from
-            https://github.com/EducationShinyAppTeam/boastUtils"
+          "Carey, R. (2019), boastUtils: BOAST Utilities, R Package. Available from
+          https://github.com/EducationShinyAppTeam/boastUtils"
         ),
         p(
           class = "hangingindent",
-          "Chang, W. and Borges Ribeio, B. (2018). shinydashboard: Create
-            dashboards with 'Shiny'. (v0.7.1) [R Package]. Available from
-            https://CRAN.R-project.org/package=shinydashboard"
+          "Chang, W. and Borges Ribeio, B. (2018), shinydashboard: Create dashboards with 'Shiny', R
+    Package. Available from https://CRAN.R-project.org/package=shinydashboard"
         ),
         p(
           class = "hangingindent",
-          "Chang, W., Cheng, J., Allaire, J., Xie, Y., and McPherson, J.
-            (2019). shiny: Web application framework for R. (v1.4.0)
-            [R Package]. Available from https://CRAN.R-project.org/package=shiny"
+          "Chang, W., Cheng, J., Allaire, J., Xie, Y., and McPherson, J. (2019),  shiny: Web 
+    application framework for R, R Package. Available from 
+    https://CRAN.R-project.org/package=shiny"
         ),
+        ####
         p(
           class = "hangingindent",
-          "Dennis D. Boos and Douglas Nychka (2012). Rlab: Functions and Datasets Required for
-  ST370 class. R package version 2.15.1. https://CRAN.R-project.org/package=Rlab"
+          "Boos, D. D. and Nychka, D. (2012), Rlab: Functions and Datasets Required for
+  ST370 class, R package. Available from https://CRAN.R-project.org/package=Rlab"
         ),
+        ####
         p(
           class = "hangingindent",
-          "Hadley Wickham, Romain François, Lionel Henry and Kirill Müller (2020). dplyr: A Grammar of Data
-  Manipulation. R package version 0.8.5. https://CRAN.R-project.org/package=dplyr"
+          "Wickham, H., François, R., Henry L., and Müller, K. (2020), dplyr: A Grammar of Data
+  Manipulation, R package. Available from https://CRAN.R-project.org/package=dplyr"
         ),
+        ####
         p(
           class = "hangingindent",
-          "Penn State University. 3.2 - Graphs: Displaying Measurement Data: STAT 100. 
-          Penn State: Statistics Online Courses. Available at https://online.stat.psu.edu/stat100/lesson/3/3.2."
+          "Penn State University, 3.2 - Graphs: Displaying Measurement Data: STAT 100. 
+          Penn State: Statistics Online Courses. Available from https://online.stat.psu.edu/stat100/lesson/3/3.2"
         ),
+        ####
         p(
           class = "hangingindent",
-          "R Core Team (2020). R: A language and environment for statistical computing. R
-          Foundation for Statistical Computing, Vienna, Austria. URL https://www.R-project.org/."
+          "R Core Team (2020), R: A language and environment for statistical computing. R
+          Foundation for Statistical Computing, Vienna, Austria, R package. Available from https://www.R-project.org/"
         )
         ,
-        
         p(
           class = "hangingindent",
-          "Robert Carey (2019). rlocker: Learning Locker for Shiny. R package version 0.2.3.
-          https://github.com/rpc5102/rlocker"
+          "Wickham, H. (2016), ggplot2: Elegant graphics for data analysis, R Package, New York:
+    Springer-Verlag. Available from https://ggplot2.tidyverse.org"
         ),
-        
+        ####
         p(
           class = "hangingindent",
-          "Victor Perrier, Fanny Meyer and David Granjon (2020). shinyWidgets: Custom Inputs
-  Widgets for Shiny. R package version 0.5.2.
+          "Perrier, V., Meyer, F., and Granjon, D. (2020), shinyWidgets: Custom Inputs
+  Widgets for Shiny, R package. Available from
   https://CRAN.R-project.org/package=shinyWidgets"
         ),
+        ####
         p(
           class = "hangingindent",
-          "Yaan. (2007). Shagai. Wikimedia. Available at https://commons.wikimedia.org/wiki/File:Shagai.jpg."
+          "Yaan (2007), Shagai. Wikimedia. Available from https://commons.wikimedia.org/wiki/File:Shagai.jpg"
         )
         
       )
