@@ -556,7 +556,7 @@ shinyServer(function(session, input, output) {
   })
 
   ###################################################################
-  ## Astrugulas
+  ## Astragalus
   ####################################################################
 
   # Die results
@@ -579,7 +579,7 @@ shinyServer(function(session, input, output) {
       ncol = input$aspath
     ))
 
-  # Average of Astrugluas
+  # Average of Astragalus
   output$line2 <- renderCachedPlot({
 
     # Define the true mean
@@ -595,7 +595,7 @@ shinyServer(function(session, input, output) {
     list(input$aspath, input$assize)
   })
 
-  # Sum of Astrugluas
+  # Sum of Astragalus
   output$line1 <- renderCachedPlot ({
     matrix = drawAdie()
     matrixSum = matrix(0, nrow = input$assize, ncol = input$aspath)

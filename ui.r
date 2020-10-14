@@ -10,6 +10,12 @@ shinyUI(dashboardPage(
     title = 'Law of Large Numbers',
     titleWidth=250,
     tags$li(class = "dropdown", actionLink("info", icon("info"))),
+    tags$li(
+      class = "dropdown",
+      tags$a(target = "_blank", icon("comments"),
+             href = "https://pennstate.qualtrics.com/jfe/form/SV_7TLIkFtJEJ7fEPz?appName=Law_of_Large_Numbers"
+      )
+    ),
     tags$li(class = "dropdown",
             tags$a(href='https://shinyapps.science.psu.edu/',
                    icon("home")))
@@ -44,8 +50,8 @@ shinyUI(dashboardPage(
           means and proportions. The Law of Large Numbers tells us that the
           [arithmetic] mean and proportions become  more stable (less variable)
           than a sum or counts when there are more trials. This stability is not
-          the result of some self-correcting behavior asindependent trials have
-          no memory of what happened before nor dothey know what will happen in
+          the result of some self-correcting behavior as independent trials have
+          no memory of what happened before nor do they know what will happen in
           the future."),
         p("This app lets you explore the Law of Large Numbers in action for
           different sample sizes from different populations."),
@@ -343,7 +349,7 @@ shinyUI(dashboardPage(
                   value = 100
                 )
               ),
-              # Astragulus----
+              # Astragalus----
               conditionalPanel(
                 condition = "input.popDist == 'astragalus'",
                 # Choose number of paths
