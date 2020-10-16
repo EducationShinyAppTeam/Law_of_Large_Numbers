@@ -284,7 +284,6 @@ shinyServer(function(session, input, output) {
     trueMean = (rightSkew())
 
     # Make means plot
-    print(data2())
     makeMeansPlot(input$rightpath,
                   input$rightsize,
                   matrixMeans(input$rightpath, input$rightsize, data2()),
@@ -393,7 +392,7 @@ shinyServer(function(session, input, output) {
   ####################################################################
   # Population for bimodel
   prop<-reactive({input$prop/100})
-  output$plotbiomodel1 <- renderCachedPlot({
+  output$plotbimodal1 <- renderCachedPlot({
     # Define parameters for density plot
     t <- 1 / (input$bisize * input$bipath)
     y <- seq(0, 1, t)
@@ -448,7 +447,7 @@ shinyServer(function(session, input, output) {
   })
 
   #Average for bimodel
-  output$plotbiomodel2 <- renderCachedPlot({
+  output$plotbimodal2 <- renderCachedPlot({
 
     # Define the true mean
     trueMean = mean(data4())
@@ -465,7 +464,7 @@ shinyServer(function(session, input, output) {
   })
 
   # Sum for bimodel
-  output$plotbiomodel3 <- renderCachedPlot({
+  output$plotbimodal3 <- renderCachedPlot({
     matrix = data4()
     # Store value of sum into matrix matrixSum
     matrixSum = matrix(0, nrow = input$bisize, ncol = input$bipath)
