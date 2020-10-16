@@ -732,11 +732,12 @@ shinyServer(function(session, input, output) {
 
     # Define the true sum
     trueSum = 0
-
+    
     # Plot sum in different paths
     makeSumPlot(input$ipodpath, input$ipodsize, matrixSum, trueSum)
   },
   cacheKeyExpr = {
-    list(input$s1, input$s2, input$s3, input$ptype, input$s4, input$ipodsize)
+    list(input$s1, input$s2, input$s3, input$ptype, 
+         input$s4, input$ipodsize, input$ipodpath)
   })
 })
