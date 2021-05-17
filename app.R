@@ -142,9 +142,15 @@ ui <- list(
                   while the narrower sides (the 1 and the 6) each come up about
                   10% of the time. The following image provides four different
                   views of an astragalus."),
-            HTML('<center><figure><img src="astragalus.jpg"
-               alt="Picture of an astragalus" width="600">
-               <figcaption>Image by Yaan, 2007</figcaption></figure></center>'),
+            tags$figure(
+              align = "center",
+              tags$img(
+                src = "astragalus.jpg",
+                width = 600,
+                alt = "Picture of an astragalus (bone die)"
+              ),
+              tags$figcaption("Image of Astragalus by Yaan, 2007")
+            ),
             tags$li("The app allows you to select the number of paths to plot. The
                   number of paths refers to the number of repetitions of the
                   entire process of taking n samples that will be done."),
